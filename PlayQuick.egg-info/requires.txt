@@ -1,0 +1,4 @@
+numpy
+Pygments
+rich
+pydub
