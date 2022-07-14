@@ -25,7 +25,7 @@ class app:
     ===
     provides UI application.
     """
-    def __init__(self,console:rich.console.Console=rich.console.Console(),*,browser_dir:pathlib.Path=pathlib.Path.home(),ui_mode:bool=True,localization=i18n.Locarization()):
+    def __init__(self,console:rich.console.Console=rich.console.Console(),*,browser_dir:pathlib.Path=pathlib.Path.home(),ui_mode:bool=True,localization=i18n.Locarization.read()):
         """
         __init__
         ========
@@ -34,6 +34,7 @@ class app:
         - console : set console for output.
         - browser : set home directory for browser.
         - ui : the flag for using ui.
+        - localization : for the localization
         """
         self.localization=localization
         self.stream=None

@@ -14,7 +14,6 @@ def main():
     update_checker(console)
     from app import app
     import data
-    i18n=localization.localization.Locarization.read()
     parser=argparse.ArgumentParser("PlayQuick",description="Simple media player that has UI and works on the console.")
     parser.add_argument("-f","--file",help="Set filepath.",type=str,nargs="+")
     parser.add_argument("-v","--volume",help="Set volume.",type=int,default=100)
@@ -28,6 +27,7 @@ def main():
         choices=[0,1,2])
     parser.add_argument("--dir","--open-with",help="Open directory on browser UI. (Only avaliable on UI.)",type=str,default=pathlib.Path.home())
     parser.add_argument("--list","--list-codecs",help="list supported codecs.",action="store_true")
+    parser.add_argument("-l","--lang",help="Select language.",type=str,default="en")
     subparser=parser.add_subparsers(dest="subcommand")
     #noui=subparser.add_parser("noui",description="Disable UI.",)
     args=parser.parse_args()
@@ -35,6 +35,7 @@ def main():
         console.rule("Avaliable codecs on PlayQuick")
         console.print(rich.columns.Columns(data.avaliable_codecs))
         sys.exit()
+    i18n=localization.localization.Locarization.read(args.lang)
     console.log(i18n.data)
     a=app(console,browser_dir=args.dir,localization=i18n)#,ui_mode=args.subcommand!="noui")
     a.open(args.volume)
