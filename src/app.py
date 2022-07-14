@@ -11,6 +11,7 @@ import sys
 import input
 import threading
 import traceback
+import localization.localization as i18n
 from rich import print
 import rich.live
 import rich.panel
@@ -24,7 +25,7 @@ class app:
     ===
     provides UI application.
     """
-    def __init__(self,console:rich.console.Console=rich.console.Console(),*,browser_dir:pathlib.Path=pathlib.Path.home(),ui_mode:bool=True):
+    def __init__(self,console:rich.console.Console=rich.console.Console(),*,browser_dir:pathlib.Path=pathlib.Path.home(),ui_mode:bool=True,localization=i18n.Locarization()):
         """
         __init__
         ========
@@ -34,6 +35,7 @@ class app:
         - browser : set home directory for browser.
         - ui : the flag for using ui.
         """
+        self.localization=localization
         self.stream=None
         self.stop=False
         self.queue_clear_chk=False
@@ -42,7 +44,7 @@ class app:
         self.repeat=0 #0 -> no repeat 1 -> repeat queue 2 -> repeat a song
         self.queue=data.queue()
         self.is_ui_enable=ui_mode
-        self.ui=ui.ui()
+        self.ui=ui.ui(i18n=localization)
         self.ui.browser.set_location(browser_dir)
         self.keyrepeat=10
         self.player=None

@@ -1,0 +1,25 @@
+{
+    "ui.player.album":"Album: [bold green3]{}[/]",
+    "ui.player.artist":"Artist: [bold green3]{}[/]",
+    "ui.player.title":"Title: [bold green3]{}[/]",
+    "ui.player.header":" PlayQuick - Playing: {} ",
+    "ui.player.repeat":"[magenta]repeat: {} (F7, R)",
+    "ui.player.repeat.no":":x: (No repeat)",
+    "ui.player.repeat.queue":":repeat: (Repeat Queue)",
+    "ui.player.repeat.song":":repeat_one: (Repeat Song)",
+    "ui.selectionmode":"[yellow][reverse]Selection mode:[/reverse]",
+    "ui.selectionmode.on":"[green3]ON[green3]",
+    "ui.selectionmode.off":"[blue]OFF[/blue]",
+    "ui.browser.header":"[green3]browsing: [magenta bold]{} [/]",
+    "ui.browser.check_open.message":"[green3](1) Add to end of queue.\n(2) Add first of queue (and play).\n(3) Clear queue and play.\n(ENTER) Cancel",
+    "ui.browser.check_open.title":"[magenta]How do you want to open this file?",
+    "ui.queue.row.playing":"",
+    "ui.queue.row.tracknum":"track no.",
+    "ui.queue.row.title":"title",
+    "ui.queue.row.artist":"artist",
+    "ui.queue.row.album":"album",
+    "ui.queue.row.filetype":"filetype",
+    "ui.queue.row.path":"path",
+    "ui.property.none":"There are no property to be shown. Press [gray reverse]p[/gray reverse] key in Queue tab."
+
+}

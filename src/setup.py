@@ -10,7 +10,6 @@ setuptools.setup(
     version="0.1.0a",
     install_requires=[
         "numpy",
-        "Pygments",
         "rich",
         "pydub",
     ],

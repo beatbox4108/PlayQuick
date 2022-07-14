@@ -18,13 +18,15 @@ from rich import print
 import shutil
 import sys
 import time
-import unicodedata
+import localization.localization as i18n
 import data
 
 
 class fs_browser:
-    def __init__(self) -> None:
+    def __init__(self,i18n:i18n.Locarization=i18n.Locarization.read()) -> None:
         self.browser=Layout()
+        self.i18n=i18n
+        self._=i18n.get
         self._location:pathlib.Path=pathlib.Path.home()
         self._location_is_root:bool=False
         self._listdir:list=[]
@@ -42,7 +44,7 @@ class fs_browser:
         
         self._listdir=[" ".join((("[green3]" if self.__class__.is_codec_avaliable(f.suffix.lstrip(".")) else "")+("d" if f.is_dir() else "f" if f.is_file() else "l" if f.is_symlink() else "s" if f.is_char_device() or f.is_block_device() else"?"),str(f) if f.name=="" else f.name)) for f in self._listdir_raw]
     def scrolled(self,index):
-        if self._openchk:return Panel(rich.text.Text.from_markup("[green3](1) Add to end of queue.\n(2) Add first of queue (and play).\n(3) Clear queue and play.\n(ENTER) Cancel"),title=rich.text.Text.from_markup("[magenta]How do you want to open this file?"))
+        if self._openchk:return Panel(rich.text.Text.from_markup(self._("ui.browser.check_open.message")),title=rich.text.Text.from_markup(self._("ui.browser.check_open.title")))
         d=self._listdir[:]
         table=Table.grid(expand=True)
         if (len(d) > index):d[index]="[reverse]"+d[index]
@@ -56,7 +58,7 @@ class fs_browser:
         if not self._openchk:self._focus=None
         self.column=self.scrolled(self._index)
         self.browser.split_column(
-            Layout(rich.text.Text.from_markup(f"[green3]browsing: [magenta bold]{self._location.resolve()} [/][green3]line: {self._index}"),size=2),
+            Layout(rich.text.Text.from_markup(self._("ui.browser.header").format(self._location.resolve())),size=2),
             self.column
         )
         return self
@@ -94,8 +96,10 @@ class fs_browser:
 
 
 class queue_builder:
-    def __init__(self) -> None:
+    def __init__(self,i18n:i18n.Locarization=i18n.Locarization.read()) -> None:
         self._table=Table()
+        self.i18n=i18n
+        self._=i18n.get
         self._focus_index=0
         self._selection_index=0
         self._selection=data.selection()
@@ -108,7 +112,15 @@ class queue_builder:
         self.queue=queue
         self.make_selection()
         self.index=self.index
-        for c in ["","track no.","title","artist","album","filetype","path"]:
+        for c in [
+                self._("ui.queue.row.playing"),
+                self._("ui.queue.row.tracknum"),
+                self._("ui.queue.row.title"),
+                self._("ui.queue.row.artist"),
+                self._("ui.queue.row.album"),
+                self._("ui.queue.row.filetype"),
+                self._("ui.queue.row.path")
+            ]:
             self._table.add_column(c)
         for i,s in enumerate(queue.queue):
             if self._focus_index-5 > i:continue
@@ -132,11 +144,13 @@ class queue_builder:
     
 
 class property_tab:
-    def __init__(self) -> None:
+    def __init__(self,i18n:i18n.Locarization=i18n.Locarization.read()) -> None:
         self.data:typing.Union[data.propertydata,None]=None
+        self.i18n=i18n
+        self._=i18n.get
     def set_property(self,propertydata:data.propertydata):
         self.data=propertydata
-    def get(self):return Panel("There are no property to be shown. Press [gray reverse]p[/gray reverse] key in Queue tab.") if self.data is None else self.data.table
+    def get(self):return Panel(self._("ui.property.none")) if self.data is None else self.data.table
 
 
 
@@ -154,26 +168,27 @@ class ui:
     class nonepacker:
         def __init__(self,o):self.o=o
         def get(self):return o
-    def __init__(self) -> None:
+    def __init__(self,i18n:i18n.Locarization=i18n.Locarization.read()) -> None:
         self.data_default={"time":0,"time_length":1,"title":"-","album":"UNKNOWN","artist":"UNKNOWN","volume":100,"pause":False,"mute":False}
         self._tab=0
+        self.i18n=i18n
+        self._=i18n.get
         self._message=""
         self.layout=Layout()
         self.player=Layout(size=7)
-        self.browser=fs_browser()
-        self.q_builder=queue_builder()
-        self.property_tab=property_tab()
+        self.browser=fs_browser(i18n=i18n)
+        self.q_builder=queue_builder(i18n=i18n)
+        self.property_tab=property_tab(i18n=i18n)
         self.tabmgr=tabs_manager([self.browser,self.q_builder,self.property_tab])
     @staticmethod
     def tabs(tabs,selected)->Panel:
         return rich.text.Text.from_markup("[underline]|[/]".join([(f"[green]{t}[/]" if selected==i else f"[underline]{t}[/]") for i,t in enumerate(tabs)]))
     def titles(self,data):
-        return rich.text.Text().append("title:")\
-                                .append(data["title"],"bold green3")\
-                                .append(" artist:")\
-                                .append(data["artist"],"bold green3")\
-                                .append(" album:")\
-                                .append(data["album"],"bold green3")
+        return rich.text.Text.from_markup(\
+            self._("ui.player.title").format(data["title"])+" "+\
+            self._("ui.player.artist").format(data["artist"])+" "+\
+            self._("ui.player.album").format(data["album"])+" "\
+            )
     def time_and_volume(self,data):
         table=Table.grid(expand=True)
         table.add_column()
@@ -198,7 +213,7 @@ class ui:
         self.browser.update()
         self.q_builder.update(queue)
         self.layout.split_column(
-            Layout(rich.text.Text.from_markup("[yellow][reverse]Selection mode:[/reverse]"+("[green3]ON[green3]" if info.get("selection_mode") else "[blue]OFF[/blue]")),size=1),
+            Layout(rich.text.Text.from_markup(self._("ui.selectionmode")+(self._("ui.selectionmode.on") if info.get("selection_mode") else self._("ui.selectionmode.off"))),size=1),
             Layout((self.tabs(["FileSystem","Queue","Property"],self._tab)),size=1),
             (self.tabmgr.get(noneval=[self.__class__.nonepacker(Panel("There were something went wrong... Please try again."))]).get()) if custom_panel is None else custom_panel,
             self.player
@@ -210,12 +225,12 @@ class ui:
         wsize=size[0]-5
 
         self.player.split_column(
-            rich.text.Text(" PlayQuick - PLAYING: {} ".format(data["title"]),justify="center"),
+            rich.text.Text(self._("ui.player.header").format(data["title"]),justify="center"),
             Layout(self.titles(data),height=2),
             self.time_and_volume(data),
             self.get_timeline(data,wsize),
             rich.text.Text(f"|◀◀ (F4) ◀◀ (←) {'▶' if data['pause'] else '▮▮'} (F5) ▶▶ (→) ▶▶| (F6)",justify="center"),
-            rich.text.Text.from_markup(f"[magenta]repeat: {({0:':x: (No repeat)',1:':repeat: (Repeat Queue)',2:':repeat_one: (Repeat Song)'}[data['repeat']])} (F7, R)",justify="center"),
+            rich.text.Text.from_markup(self._("ui.player.repeat").format(({0:self._('ui.player.repeat.no'),1:self._('ui.player.repeat.queue'),2:self._('ui.player.repeat.song')})[data['repeat']]),justify="center"),
             rich.text.Text(" " if self._message=="" else self._message)
         )
     def prepare(self):
