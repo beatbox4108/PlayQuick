@@ -11,9 +11,6 @@ def update_checker(console:rich.console.Console=rich.console.Console()):
     installer.check(console)
 def main():
     console=rich.console.Console()
-    update_checker(console)
-    from app import app
-    import data
     parser=argparse.ArgumentParser("PlayQuick",description="Simple media player that has UI and works on the console.")
     parser.add_argument("-f","--file",help="Set filepath.",type=str,nargs="+")
     parser.add_argument("-v","--volume",help="Set volume.",type=int,default=100)
@@ -32,11 +29,16 @@ def main():
     #noui=subparser.add_parser("noui",description="Disable UI.",)
     args=parser.parse_args()
     i18n=localization.localization.Locarization.read(args.lang)
+
+    update_checker(console)
+    
+    import data
     if args.list:
         console.rule("Avaliable codecs on PlayQuick")
         console.print(rich.columns.Columns(data.avaliable_codecs))
         sys.exit()
     console.log(i18n.data)
+    from app import app
     a=app(console,browser_dir=args.dir,localization=i18n)#,ui_mode=args.subcommand!="noui")
     a.open(args.volume)
     if args.repeat == 0:a.repeat=0
