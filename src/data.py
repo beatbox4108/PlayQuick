@@ -5,15 +5,15 @@ data is classes of objects.
 """
 
 import asyncio
-from io import TextIOWrapper
 import json
 import math
 import pathlib
 import typing
+from io import TextIOWrapper
+
 import pydub.utils
 import rich
 import rich.table
-
 
 avaliable_codecs=("wav","mp2","mp3","m4a","ogg","opus","flac")
 

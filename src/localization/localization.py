@@ -1,6 +1,6 @@
 import json
-import typing
 import pathlib
+import typing
 
 import data
 

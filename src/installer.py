@@ -1,9 +1,12 @@
-from pip._internal.operations import freeze
-import os,sys
+import os
 import subprocess
+import sys
+
 import rich
 import rich.progress
-from rich import print,console
+from rich import console, print
+
+
 def setup(con:console.Console=console.Console()):
     con.log("Installing external library.")
     with rich.progress.Progress() as progress:

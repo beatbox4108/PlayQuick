@@ -1,10 +1,14 @@
+import argparse
 import asyncio
 import pathlib
+import sys
+
 import rich
 import rich.columns
-import sys
-import argparse
+
 import localization.localization
+
+
 def update_checker(console:rich.console.Console=rich.console.Console()):
     console.log("Checking for required libraries. Hang on...")
     import installer

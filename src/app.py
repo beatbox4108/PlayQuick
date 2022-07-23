@@ -1,23 +1,26 @@
-import pathlib
-from numpy import append
-import ui
-import data
-import player
-import stream
 import argparse
 import asyncio
-import time
+import pathlib
 import sys
-import input
 import threading
+import time
 import traceback
-import localization.localization as i18n
-from rich import print
+
+import rich.console
 import rich.live
+import rich.markup
 import rich.panel
 import rich.text
-import rich.markup
-import rich.console
+from numpy import append
+from rich import print
+
+import data
+import input
+import localization.localization as i18n
+import player
+import stream
+import ui
+
 
 class app:
     """
