@@ -24,7 +24,7 @@ def main():
         choices=[0,1,2])
     parser.add_argument("--dir","--open-with",help="Open directory on browser UI. (Only avaliable on UI.)",type=str,default=pathlib.Path.home())
     parser.add_argument("--list","--list-codecs",help="list supported codecs.",action="store_true")
-    parser.add_argument("-l","--lang",help="Select language.",type=str,default="en")
+    parser.add_argument("-l","--lang",help="Select language.",type=str,default="English")
     subparser=parser.add_subparsers(dest="subcommand")
     #noui=subparser.add_parser("noui",description="Disable UI.",)
     args=parser.parse_args()
