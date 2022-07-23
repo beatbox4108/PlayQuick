@@ -7,6 +7,9 @@
     "ui.player.repeat.no":":x: (No repeat)",
     "ui.player.repeat.queue":":repeat: (Repeat Queue)",
     "ui.player.repeat.song":":repeat_one: (Repeat Song)",
+    "ui.player.volume":"[red]{m}[/] [bold green3]{v}%[/] {i}",
+    "ui.player.volume.muted":"muted",
+    "ui.player.volume.unmuted":"     ",
     "ui.selectionmode":"[yellow][reverse]Selection mode:[/reverse]",
     "ui.selectionmode.on":"[green3]ON[green3]",
     "ui.selectionmode.off":"[blue]OFF[/blue]",
@@ -22,7 +25,14 @@
     "ui.queue.row.path":"path",
     "ui.property.none":"There are no property to be shown. Press [gray reverse]p[/gray reverse] key in Queue tab.",
     "ui.tab.error":"Oh, there were something went wrong... Please try again.",
+    "ui.tab.filesystem":"FileSystem",
+    "ui.tab.queue":"Queue",
+    "ui.tab.property":"Property",
+
 
     "app.exit.message":"[green3]Are there no prompt? Press any key to show.\n[purple]And let's visit [link=https://beatbox4108.tk]me[/link].",
-    "app.exit.message.title":"PlayQuick INFORMATION"
+    "app.exit.message.title":"PlayQuick INFORMATION",
+    "app.exit.confirm":"Exit player? [y/n]",
+    
+    "app.queue.delete":"[red]Do you really want to delete item(s)?\n[green3](C to delete selected/focused item(s).)\n(Enter or Shift+C to clear queue)"
 }

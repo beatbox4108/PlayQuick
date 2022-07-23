@@ -197,10 +197,13 @@ class ui:
                 time.strftime("%H:%M:%S",time.gmtime(0 if data["time"]is None else data["time"])),
                 time.strftime("%H:%M:%S",time.gmtime(0 if data["time_length"]is None else data["time_length"]))
             )),
-            rich.text.Text("",justify="right").append("volume: ")\
-                .append((str(data['volume']).rjust(3)+"%"),"bold green3")\
-                .append('muted' if data['mute'] else '     ')\
-                .append(self.volume_indicator(data['volume'])
+            rich.text.Text.from_markup(
+                self._("ui.player.volume").format(
+                    v=str(data['volume']).rjust(3),
+                    m=(self._("ui.player.volume.muted") if data['mute'] else self._("ui.player.volume.unmuted")),
+                    i=self.volume_indicator(data['volume'])
+                )
+                ,justify="right"
             )
         )
         return table
@@ -214,7 +217,7 @@ class ui:
         self.q_builder.update(queue)
         self.layout.split_column(
             Layout(rich.text.Text.from_markup(self._("ui.selectionmode")+(self._("ui.selectionmode.on") if info.get("selection_mode") else self._("ui.selectionmode.off"))),size=1),
-            Layout((self.tabs(["FileSystem","Queue","Property"],self._tab)),size=1),
+            Layout((self.tabs([self._("ui.tab.filesystem"),self._("ui.tab.queue"),self._("ui.tab.property")],self._tab)),size=1),
             (self.tabmgr.get(noneval=[self.__class__.nonepacker(Panel(self._("ui.tab.error")))]).get()) if custom_panel is None else custom_panel,
             self.player
         )
