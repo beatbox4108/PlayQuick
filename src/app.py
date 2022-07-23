@@ -37,6 +37,7 @@ class app:
         - localization : for the localization
         """
         self.localization=localization
+        self._=localization.get
         self.stream=None
         self.stop=False
         self.queue_clear_chk=False
