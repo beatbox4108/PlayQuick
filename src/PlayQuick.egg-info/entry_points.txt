@@ -1,0 +1,4 @@
+[console_scripts]
+playquick = commandline:main
+pq = commandline:main
+
