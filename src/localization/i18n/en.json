@@ -20,6 +20,9 @@
     "ui.queue.row.album":"album",
     "ui.queue.row.filetype":"filetype",
     "ui.queue.row.path":"path",
-    "ui.property.none":"There are no property to be shown. Press [gray reverse]p[/gray reverse] key in Queue tab."
+    "ui.property.none":"There are no property to be shown. Press [gray reverse]p[/gray reverse] key in Queue tab.",
+    "ui.tab.error":"Oh, there were something went wrong... Please try again.",
 
+    "app.exit.message":"[green3]Are there no prompt? Press any key to show.\n[purple]And let's visit [link=https://beatbox4108.tk]me[/link].",
+    "app.exit.message.title":"PlayQuick INFORMATION"
 }

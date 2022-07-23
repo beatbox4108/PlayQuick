@@ -31,11 +31,11 @@ def main():
     subparser=parser.add_subparsers(dest="subcommand")
     #noui=subparser.add_parser("noui",description="Disable UI.",)
     args=parser.parse_args()
+    i18n=localization.localization.Locarization.read(args.lang)
     if args.list:
         console.rule("Avaliable codecs on PlayQuick")
         console.print(rich.columns.Columns(data.avaliable_codecs))
         sys.exit()
-    i18n=localization.localization.Locarization.read(args.lang)
     console.log(i18n.data)
     a=app(console,browser_dir=args.dir,localization=i18n)#,ui_mode=args.subcommand!="noui")
     a.open(args.volume)

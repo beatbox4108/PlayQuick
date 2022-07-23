@@ -215,7 +215,7 @@ class ui:
         self.layout.split_column(
             Layout(rich.text.Text.from_markup(self._("ui.selectionmode")+(self._("ui.selectionmode.on") if info.get("selection_mode") else self._("ui.selectionmode.off"))),size=1),
             Layout((self.tabs(["FileSystem","Queue","Property"],self._tab)),size=1),
-            (self.tabmgr.get(noneval=[self.__class__.nonepacker(Panel("There were something went wrong... Please try again."))]).get()) if custom_panel is None else custom_panel,
+            (self.tabmgr.get(noneval=[self.__class__.nonepacker(Panel(self._("ui.tab.error")))]).get()) if custom_panel is None else custom_panel,
             self.player
         )
         

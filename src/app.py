@@ -69,7 +69,7 @@ class app:
         info["mute"]=self.stream.mute
         info["repeat"]=self.repeat
         info["selection_mode"]=self.selecting_mode
-        self.ui.update(info,self.queue,rich.panel.Panel(rich.text.Text.from_markup("[red]Do you really want to delete item(s)?\n[green3](C to delete selected/focused item(s).)\n(Enter or Shift+C to clear queue)")) if self.queue_clear_chk else None,"Exit player? [y/n]" if self.stopchk else self.informationText)
+        self.ui.update(info,self.queue,rich.panel.Panel(rich.text.Text.from_markup(self._("app.queue.delete"))) if self.queue_clear_chk else None,self._("app.exit.confirm") if self.stopchk else self.informationText)
     @property
     def volume(self):return self.stream.volume if self.stream is not None else 100
     @volume.setter
@@ -129,7 +129,7 @@ class app:
                     time.sleep(0.05)
         except KeyboardInterrupt:pass
         listener.stop=True
-        print(rich.panel.Panel("[green3]Are there no prompt? Press any key to show.\n[purple]And let's visit [link=https://beatbox4108.tk]me[/link].",title="PlayQuick INFORMATION"))
+        print(rich.panel.Panel(self._("app.exit.message"),title=self._("app.exit.message.title")))
     def mainloop(self):
         self.eventloop.run_in_executor(None,self.queue_mainloop)
         if self.is_ui_enable:self.ui_mainloop()
