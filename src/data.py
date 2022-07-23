@@ -17,6 +17,29 @@ import rich.table
 
 avaliable_codecs=("wav","mp2","mp3","m4a","ogg","opus","flac")
 
+avaliable_languages=(
+    "Chinese Simplified",
+    "Chinese Traditional",
+    "Dutch",
+    "English, India",
+    "English",
+    "Finnish",
+    "French",
+    "German",
+    "Hebrew",
+    "Hindi",
+    "Italian",
+    "Japanese",
+    "Korean",
+    "Portuguese, Brazilian",
+    "Portuguese",
+    "Romanian",
+    "Russian",
+    "Spanish",
+    "Swedish",
+    "Ukrainian",
+)
+
 
 def convert_size(size_bytes):
    if size_bytes == 0:

@@ -24,20 +24,31 @@ def main():
         choices=[0,1,2])
     parser.add_argument("--dir","--open-with",help="Open directory on browser UI. (Only avaliable on UI.)",type=str,default=pathlib.Path.home())
     parser.add_argument("--list","--list-codecs",help="list supported codecs.",action="store_true")
-    parser.add_argument("-l","--lang",help="Select language.",type=str,default="English")
+    parser.add_argument("-l","--lang",help="Select language. -l list to show avaliable languages.",type=str,default="English")
     subparser=parser.add_subparsers(dest="subcommand")
     #noui=subparser.add_parser("noui",description="Disable UI.",)
     args=parser.parse_args()
-    i18n=localization.localization.Locarization.read(args.lang)
+
+    import data
+
+    if args.lang=="list":
+        console.rule("Avaliable languages for PlayQuick")
+        console.print(rich.columns.Columns(data.avaliable_languages))
+        console.rule()
+        console.print("Let's [link=https://crowdin.com/project/playquick]contribute our project translation[/]!")
+        sys.exit()
+    if not args.lang in data.avaliable_languages:
+        lang="English"
+        console.log(f"Skipping UNKNOWN language \"{args.lang}\"")
+    else:lang=args.lang
+    i18n=localization.localization.Locarization.read(lang)
 
     update_checker(console)
-    
-    import data
+
     if args.list:
         console.rule("Avaliable codecs on PlayQuick")
         console.print(rich.columns.Columns(data.avaliable_codecs))
         sys.exit()
-    console.log(i18n.data)
     from app import app
     a=app(console,browser_dir=args.dir,localization=i18n)#,ui_mode=args.subcommand!="noui")
     a.open(args.volume)
@@ -49,7 +60,6 @@ def main():
         for i in args.file:
             a.queue.append(data.song(i))
         a.stream.pause=False
-    console.log(args)
     try:
         a.mainloop()
     except KeyboardInterrupt:pass
