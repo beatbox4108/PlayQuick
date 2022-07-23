@@ -4,15 +4,13 @@ import rich
 import rich.columns
 import sys
 import argparse
+import localization.localization
 def update_checker(console:rich.console.Console=rich.console.Console()):
     console.log("Checking for required libraries. Hang on...")
     import installer
     installer.check(console)
 def main():
     console=rich.console.Console()
-    update_checker(console)
-    from app import app
-    import data
     parser=argparse.ArgumentParser("PlayQuick",description="Simple media player that has UI and works on the console.")
     parser.add_argument("-f","--file",help="Set filepath.",type=str,nargs="+")
     parser.add_argument("-v","--volume",help="Set volume.",type=int,default=100)
@@ -26,14 +24,22 @@ def main():
         choices=[0,1,2])
     parser.add_argument("--dir","--open-with",help="Open directory on browser UI. (Only avaliable on UI.)",type=str,default=pathlib.Path.home())
     parser.add_argument("--list","--list-codecs",help="list supported codecs.",action="store_true")
+    parser.add_argument("-l","--lang",help="Select language.",type=str,default="en")
     subparser=parser.add_subparsers(dest="subcommand")
     #noui=subparser.add_parser("noui",description="Disable UI.",)
     args=parser.parse_args()
+    i18n=localization.localization.Locarization.read(args.lang)
+
+    update_checker(console)
+    
+    import data
     if args.list:
         console.rule("Avaliable codecs on PlayQuick")
         console.print(rich.columns.Columns(data.avaliable_codecs))
         sys.exit()
-    a=app(console,browser_dir=args.dir)#,ui_mode=args.subcommand!="noui")
+    console.log(i18n.data)
+    from app import app
+    a=app(console,browser_dir=args.dir,localization=i18n)#,ui_mode=args.subcommand!="noui")
     a.open(args.volume)
     if args.repeat == 0:a.repeat=0
     elif args.repeat == 1:a.repeat=1

@@ -7,7 +7,7 @@ long_description = """
 
 setuptools.setup(
     name="PlayQuick", # Replace with your own username
-    version="0.1.0a",
+    version="0.1.0b0",
     install_requires=[
         "numpy",
         "rich",
