@@ -11,9 +11,12 @@ import pathlib
 import typing
 from io import TextIOWrapper
 
+import packaging.version
 import pydub.utils
 import rich
 import rich.table
+
+version=packaging.version.Version("0.1.0")
 
 avaliable_codecs=("wav","mp2","mp3","m4a","ogg","opus","flac")
 

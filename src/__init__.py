@@ -1,2 +1,1 @@
-import packaging.version
-version=packaging.version.Version("0.1.0b0")
+from data import version
