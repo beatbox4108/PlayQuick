@@ -8,16 +8,18 @@ PlayQuick is a Simple media player that has UI and works on a console.
 
 setuptools.setup(
     name="PlayQuick", # Replace with your own username
-    version="0.1.0",
+    version="0.1.0post0",
     install_requires=[
         "numpy",
         "rich",
         "pydub",
+        "pyaudio",
+        "packaging"
     ],
     entry_points={
         'console_scripts': [
-            'playquick=commandline:main',
-            'pq=commandline:main'
+            'playquick=playquick.commandline:main',
+            'pq=playquick.commandline:main'
         ],
     },
     author="beatbox4108",

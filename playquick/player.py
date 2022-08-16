@@ -6,7 +6,7 @@ import pyaudio
 import pydub
 import pydub.utils
 
-import data
+from . import data
 
 
 class player:

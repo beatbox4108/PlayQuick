@@ -6,13 +6,8 @@ import sys
 import rich
 import rich.columns
 
-import localization.localization
+from . import localization
 
-
-def update_checker(console:rich.console.Console=rich.console.Console()):
-    console.log("Checking for required libraries. Hang on...")
-    import installer
-    installer.check(console)
 def main():
     console=rich.console.Console()
     parser=argparse.ArgumentParser("PlayQuick",description="Simple media player that has UI and works on the console.")
@@ -46,9 +41,7 @@ def main():
         console.log(f"Skipping UNKNOWN language \"{args.lang}\"")
     else:lang=args.lang
     i18n=localization.localization.Locarization.read(lang)
-
-    update_checker(console)
-
+    
     if args.list:
         console.rule("Avaliable codecs on PlayQuick")
         console.print(rich.columns.Columns(data.avaliable_codecs))

@@ -14,12 +14,7 @@ import rich.text
 from numpy import append
 from rich import print
 
-import data
-import input
-import localization.localization as i18n
-import player
-import stream
-import ui
+from . import data,input,player,stream,ui,localization as i18n
 
 
 class app:

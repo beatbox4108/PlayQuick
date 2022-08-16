@@ -2,7 +2,28 @@ import json
 import pathlib
 import typing
 
-import data
+avaliable_languages=(
+    "Chinese Simplified",
+    "Chinese Traditional",
+    "Dutch",
+    "English, India",
+    "English",
+    "Finnish",
+    "French",
+    "German",
+    "Hebrew",
+    "Hindi",
+    "Italian",
+    "Japanese",
+    "Korean",
+    "Portuguese, Brazilian",
+    "Portuguese",
+    "Romanian",
+    "Russian",
+    "Spanish",
+    "Swedish",
+    "Ukrainian",
+)
 
 
 class Locarization:
@@ -16,7 +37,7 @@ class Locarization:
             else:
                 with open(file,"r",encoding="utf-8") as f:self.data=json.load(f)
                 return self
-        elif not lang in data.avaliable_languages:
+        elif not lang in avaliable_languages:
             lang="English"
         with open((pathlib.Path(__file__).parent)/"i18n"/f"{lang}.json","r",encoding="utf-8") as f:self.data=json.load(f)
         return self

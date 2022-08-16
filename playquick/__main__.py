@@ -1,4 +1,4 @@
-from commandline import *
+from .commandline import *
 
 if __name__=="__main__":
     main()

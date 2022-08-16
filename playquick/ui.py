@@ -20,8 +20,7 @@ from rich.layout import Layout
 from rich.panel import Panel
 from rich.table import Table
 
-import data
-import localization.localization as i18n
+from . import data,localization as i18n
 
 
 class fs_browser:

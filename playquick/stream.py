@@ -5,8 +5,7 @@ import threading
 
 import pyaudio
 
-import data
-import player
+from . import data,player
 
 
 class stream:
