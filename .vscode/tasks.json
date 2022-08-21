@@ -7,6 +7,12 @@
             "label": "build",
             "type": "shell",
             "command": "powershell ./build/build.ps1"
+        },
+        {
+            "label": "releaseCheck",
+            "type": "shell",
+            "command": "powershell ./build/release_check.ps1"
         }
     ]
+    
 }
