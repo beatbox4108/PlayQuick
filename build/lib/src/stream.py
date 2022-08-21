@@ -1,10 +1,13 @@
-import pyaudio
 import asyncio
+import collections
+import concurrent.futures
+import threading
+
+import pyaudio
+
 import data
 import player
-import threading
-import concurrent.futures
-import collections
+
 
 class stream:
     def __init__(self,volume:int=100) -> None:

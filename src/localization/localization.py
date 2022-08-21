@@ -1,6 +1,8 @@
 import json
-import typing
 import pathlib
+import typing
+
+import data
 
 
 class Locarization:
@@ -10,10 +12,12 @@ class Locarization:
     def read(cls,lang=...,*,file=...):
         self=cls()
         if lang is ...:
-            if file is ...:lang="en"
+            if file is ...:lang="English"
             else:
                 with open(file,"r",encoding="utf-8") as f:self.data=json.load(f)
                 return self
+        elif not lang in data.avaliable_languages:
+            lang="English"
         with open((pathlib.Path(__file__).parent)/"i18n"/f"{lang}.json","r",encoding="utf-8") as f:self.data=json.load(f)
         return self
     def get(self,name):

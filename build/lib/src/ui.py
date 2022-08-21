@@ -1,25 +1,27 @@
 import asyncio
 import collections
-from importlib.resources import path
 import os
-import string
 import pathlib
+import shutil
+import string
+import sys
+import time
 import typing
+from importlib.resources import path
+
 import rich
-import rich.text
 import rich.layout
-import rich.table
 import rich.style
+import rich.table
+import rich.text
+from rich import print
+from rich.columns import Columns
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.table import Table
-from rich.columns import Columns
-from rich import print
-import shutil
-import sys
-import time
-import localization.localization as i18n
+
 import data
+import localization.localization as i18n
 
 
 class fs_browser:

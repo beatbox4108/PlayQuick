@@ -2,12 +2,13 @@ import setuptools
 
 long_description = """
 # PlayQuick
-
+PlayQuick is a Simple media player that has UI and works on a console.
+[github is here](https://github.com/beatbox4108/PlayQuick)
 """
 
 setuptools.setup(
     name="PlayQuick", # Replace with your own username
-    version="0.1.0b0",
+    version="0.1.0",
     install_requires=[
         "numpy",
         "rich",
@@ -24,7 +25,7 @@ setuptools.setup(
     description="PlayQuick is a Simple media player that has UI and works on a console.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/pypa/sampleproject",
+    url="https://github.com/beatbox4108/PlayQuick",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",

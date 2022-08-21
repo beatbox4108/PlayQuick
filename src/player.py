@@ -1,10 +1,13 @@
+import pathlib
+import typing
+
+import numpy as np
+import pyaudio
 import pydub
 import pydub.utils
-import pyaudio
-import typing
-import pathlib
-import numpy as np
+
 import data
+
 
 class player:
     def __init__(self):

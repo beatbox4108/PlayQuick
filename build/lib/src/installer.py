@@ -1,9 +1,12 @@
-from pip._internal.operations import freeze
-import os,sys
+import os
 import subprocess
+import sys
+
 import rich
 import rich.progress
-from rich import print,console
+from rich import console, print
+
+
 def setup(con:console.Console=console.Console()):
     con.log("Installing external library.")
     with rich.progress.Progress() as progress:
@@ -30,17 +33,17 @@ def setup(con:console.Console=console.Console()):
                     except:
                         progress.update(task2)
                         con.log("Installition failed. Please install pyaudio manually.")
-                        return
+                        return False
             progress.update(task2,description="Successfly installed PyAudio!",completed=100)
     con.log("Successfly installed external library!")
+    return True
 
-def check(console:console.Console=console.Console()):    
-    class DummyException(Exception):pass
+def check(console:console.Console=console.Console()):
     try:
-        for i in freeze.freeze():
-            if "PyAudio" in i:
-                raise DummyException()
-        setup(console)
-        print("[magenta]Sorry,we have updated library. So, please restart PlayQuick.")
+        import pyaudio
+    except ImportError:
+        console.bell()
+        if setup(console):
+            print("[magenta]Sorry,we have updated library. So, please restart PlayQuick.")
+        console.bell()
         sys.exit(0)
-    except DummyException:pass
