@@ -1,17 +1,39 @@
+MANIFEST.in
+setup.py
 PlayQuick.egg-info/PKG-INFO
 PlayQuick.egg-info/SOURCES.txt
 PlayQuick.egg-info/dependency_links.txt
 PlayQuick.egg-info/entry_points.txt
 PlayQuick.egg-info/requires.txt
 PlayQuick.egg-info/top_level.txt
-src/__init__.py
-src/__main__.py
-src/app.py
-src/commandline.py
-src/data.py
-src/input.py
-src/installer.py
-src/player.py
-src/setup.py
-src/stream.py
-src/ui.py
+playquick/__init__.py
+playquick/__main__.py
+playquick/app.py
+playquick/commandline.py
+playquick/data.py
+playquick/input.py
+playquick/player.py
+playquick/stream.py
+playquick/ui.py
+playquick/localization/__init__.py
+playquick/localization/i18n/Chinese Simplified.json
+playquick/localization/i18n/Chinese Traditional.json
+playquick/localization/i18n/Dutch.json
+playquick/localization/i18n/English, India.json
+playquick/localization/i18n/English.json
+playquick/localization/i18n/Finnish.json
+playquick/localization/i18n/French.json
+playquick/localization/i18n/German.json
+playquick/localization/i18n/Hebrew.json
+playquick/localization/i18n/Hindi.json
+playquick/localization/i18n/Italian.json
+playquick/localization/i18n/Japanese.json
+playquick/localization/i18n/Korean.json
+playquick/localization/i18n/Portuguese, Brazilian.json
+playquick/localization/i18n/Portuguese.json
+playquick/localization/i18n/Romanian.json
+playquick/localization/i18n/Russian.json
+playquick/localization/i18n/Spanish.json
+playquick/localization/i18n/Swedish.json
+playquick/localization/i18n/Ukrainian.json
+playquick/localization/i18n/__init__.py
