@@ -27,3 +27,4 @@ localization/i18n/Russian.json
 localization/i18n/Spanish.json
 localization/i18n/Swedish.json
 localization/i18n/Ukrainian.json
+localization/i18n/__init__.py

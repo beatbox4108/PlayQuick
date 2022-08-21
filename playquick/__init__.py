@@ -10,5 +10,4 @@ except ImportError:
     print("\t> sudo dnf install pyaudio") 
     print("\t\tor,")
     print("\t> sudo yum install pyaudio") 
-from . import app,commandline,data,input,installer,player,setup,stream,ui,__main__,localization
- 
+from . import app,commandline,data,input,player,stream,ui,__main__,localization

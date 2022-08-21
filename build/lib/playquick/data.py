@@ -16,9 +16,17 @@ import pydub.utils
 import rich
 import rich.table
 
-version=packaging.version.Version("0.1.0post0")
+version=__version__=packaging.version.Version("0.1.0post0")
 
 avaliable_codecs=("wav","mp2","mp3","m4a","ogg","opus","flac")
+
+avaliable_languages=(
+    "Chinese Simplified","Chinese Traditional",
+    "Dutch","Finnish","French","German","Hebrew","Hindi","Italian",
+    "Japanese","Korean","Romanian","Russian","Spanish","Swedish","Ukrainian"
+    "English, India","English",
+    "Portguese, Brazilian","Portguese"
+)
 
 
 def convert_size(size_bytes):

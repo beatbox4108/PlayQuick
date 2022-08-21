@@ -28,7 +28,7 @@ def main():
     #noui=subparser.add_parser("noui",description="Disable UI.",)
     args=parser.parse_args()
 
-    import data
+    from . import data
 
     if args.lang=="list":
         console.rule("Avaliable languages for PlayQuick")
@@ -40,13 +40,13 @@ def main():
         lang="English"
         console.log(f"Skipping UNKNOWN language \"{args.lang}\"")
     else:lang=args.lang
-    i18n=localization.localization.Locarization.read(lang)
+    i18n=localization.Locarization.read(lang)
     
     if args.list:
         console.rule("Avaliable codecs on PlayQuick")
         console.print(rich.columns.Columns(data.avaliable_codecs))
         sys.exit()
-    from app import app
+    from .app import app
     a=app(console,browser_dir=args.dir,localization=i18n)#,ui_mode=args.subcommand!="noui")
     a.open(args.volume)
     if args.repeat == 0:a.repeat=0
