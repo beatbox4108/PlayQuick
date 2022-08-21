@@ -1,12 +1,10 @@
 Metadata-Version: 2.1
 Name: PlayQuick
-Version: 0.1.0
+Version: 0.1.0.post0
 Summary: PlayQuick is a Simple media player that has UI and works on a console.
 Home-page: https://github.com/beatbox4108/PlayQuick
 Author: beatbox4108
 Author-email: 68136638+beatbox4108@users.noreply.github.com
-License: UNKNOWN
-Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
@@ -17,5 +15,3 @@ Description-Content-Type: text/markdown
 # PlayQuick
 PlayQuick is a Simple media player that has UI and works on a console.
 [github is here](https://github.com/beatbox4108/PlayQuick)
-
-

@@ -1,1 +1,1 @@
-prune playquick/localization/i18n/*.json
+include localization/i18n/*.json

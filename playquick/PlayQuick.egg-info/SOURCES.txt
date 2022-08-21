@@ -1,3 +1,4 @@
+MANIFEST.in
 setup.py
 PlayQuick.egg-info/PKG-INFO
 PlayQuick.egg-info/SOURCES.txt
@@ -5,3 +6,24 @@ PlayQuick.egg-info/dependency_links.txt
 PlayQuick.egg-info/entry_points.txt
 PlayQuick.egg-info/requires.txt
 PlayQuick.egg-info/top_level.txt
+localization/__init__.py
+localization/i18n/Chinese Simplified.json
+localization/i18n/Chinese Traditional.json
+localization/i18n/Dutch.json
+localization/i18n/English, India.json
+localization/i18n/English.json
+localization/i18n/Finnish.json
+localization/i18n/French.json
+localization/i18n/German.json
+localization/i18n/Hebrew.json
+localization/i18n/Hindi.json
+localization/i18n/Italian.json
+localization/i18n/Japanese.json
+localization/i18n/Korean.json
+localization/i18n/Portuguese, Brazilian.json
+localization/i18n/Portuguese.json
+localization/i18n/Romanian.json
+localization/i18n/Russian.json
+localization/i18n/Spanish.json
+localization/i18n/Swedish.json
+localization/i18n/Ukrainian.json
