@@ -5,6 +5,7 @@ data is classes of objects.
 """
 
 import asyncio
+import itertools
 import json
 import math
 import pathlib
@@ -16,9 +17,14 @@ import pydub.utils
 import rich
 import rich.table
 
+import playlist_reader
+
 version=__version__=packaging.version.Version("0.1.0post0")
 
-avaliable_codecs=("wav","mp2","mp3","m4a","ogg","opus","flac")
+avaliable_codecs={
+    "audio":("wav","mp1","mpa","mp2","mpc","mp3","m4a","ogg","opus","flac"),
+    "video":("mp4",)
+}
 
 avaliable_languages=(
     "Chinese Simplified","Chinese Traditional",
@@ -28,6 +34,9 @@ avaliable_languages=(
     "Portguese, Brazilian","Portguese"
 )
 
+avaliable_playlists=(
+    "wpl","m3u"
+)
 
 def convert_size(size_bytes):
    if size_bytes == 0:
@@ -49,6 +58,7 @@ class sampleClip:
 class song:
     def __init__(self,path) -> None:
         self._path=pathlib.Path(path)
+        self.is_fetched_data=False
         self.path=str(self._path),self._path.suffix.lstrip(".")
         self.info={}
         self.title="?"
@@ -61,6 +71,7 @@ class song:
             self.artist="?" if self.info.get("artist") is None else self.info.get("artist")
             self.album="?" if self.info.get("album") is None else self.info.get("album")
         except:pass
+        else:self.is_fetched_data=True
         
 
 class selection:
@@ -86,12 +97,29 @@ class selection:
 
     
 class playlist:
-    def __init__(self,version=...) -> None:
-        self.list=None
-        self.version=...
-    def open(self,io:TextIOWrapper):
-        data=json.load(io.read())
-        data["version"]=self.version
+    parser:typing.Dict[str:playlist_reader.reader]={
+        "m3u":playlist_reader.m3u_reader,
+        "m3u8":playlist_reader.m3u_reader,
+        "wpl":playlist_reader.wpl_reader
+    }
+    def __init__(self,path=...) -> None:
+        self._path=pathlib.Path(path)
+        self.is_fetched_data=False
+        self.path=str(self._path),self._path.suffix.lstrip(".")
+        self.info={}
+        self.title="?"
+        self.artist="?"
+        self.songs:list=[]
+    def read(self):
+        try:
+            result:playlist_reader.reader=self.__class__.parser[self.path[1]](self.path)
+            self.artist=result.author
+            self.title=result.title
+            self.songs=result.files
+            self.info=dict({} if result.meta is None else result.meta)
+        except:pass
+        else:self.is_fetched_data=True
+        
         
 
 
@@ -127,36 +155,40 @@ class propertydata:
     def __init__(self) -> None:
         self.table=rich.table.Table(expand=True)
     def read_from_song(self,song:song,*,include_pathdata=True):
-        if song.info=={}:
+        if not song.is_fetched_data:
             song.read()
         self.table.add_row("title",song.title)
         self.table.add_row("artist",song.artist)
         self.table.add_row("album",song.album)
-        self.table.add_row("description",song.info.get("description"))
+        self.table.add_row("description",song.info.get("description","-- no descriptions --"))
         if include_pathdata:
             self.table.add_row("type",song.path[1])
             self.table.add_row("path",song.path[0])
         return self
+    def read_from_playlists(self,playlist:playlist):
+        if playlist.info=={}:
+            playlist.read()
     def read_from_file(self,path:typing.Union[pathlib.Path,str]):
         path:pathlib.Path=pathlib.Path(path)
         if path.is_symlink():
             self.table.add_row("filetype","Link")
-            self.table.add_row("path",str(path))
         elif path.is_dir():
             self.table.add_row("filetype","Directory")
             #self.table.add_row("items",len(list(path.glob("./*"))))
             #self.table.add_row("sub-directories",len(list(path.glob("./*/"))))
-            self.table.add_row("path",str(path))
         if path.is_file():
-            if path.suffix.lstrip(".") in avaliable_codecs:
-                self.table.add_row("filetype","Audiofile (Openable)")
-                self.table.add_row("path",str(path))
-                self.table.add_row("ext",path.suffix)
-                self.table.add_row("size",convert_size(path.stat().st_size))
+            if path.suffix.lstrip(".") in tuple(itertools.chain.from_iterable(avaliable_codecs.values())):
+                self.table.add_row("filetype",
+                    ("AudioFile (Openable)" if path.suffix.lstrip(".") in avaliable_codecs["audio"] else \
+                    ("VideoFile (Openable)" if path.suffix.lstrip(".") in avaliable_codecs["video"] else \
+                    "UNKNOWN Openable file"
+                )))
                 self.read_from_song(song(path))
+            elif path.suffix.lstrip(".") in avaliable_playlists:
+                self.table.add_row("filetype","PlayListFile (Openable in near future!)")
             else:
                 self.table.add_row("filetype","File")
-                self.table.add_row("path",str(path))
-                self.table.add_row("ext",path.suffix)
-                self.table.add_row("size",convert_size(path.stat().st_size))
+            self.table.add_row("ext",path.suffix)
+            self.table.add_row("size",convert_size(path.stat().st_size))
+        self.table.add_row("path",str(path))
         return self

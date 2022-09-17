@@ -7,6 +7,7 @@ import string
 import sys
 import time
 import typing
+import itertools
 from importlib.resources import path
 
 import rich
@@ -86,10 +87,10 @@ class fs_browser:
             self._index=0
     @staticmethod
     def avaiable_codecs():
-        return data.avaliable_codecs
+        return itertools.chain.from_iterable(data.avaliable_codecs.values())
     @classmethod
-    def is_codec_avaliable(cls,codec):
-        return codec in cls.avaiable_codecs()
+    def is_codec_avaliable(cls,codec,*,type:typing.Literal["audio","video",None]=None):
+        return codec in (list(cls.avaiable_codecs()) if type is None else data.avaliable_codecs[type])
 
     def set_location(self,loc):
         self._location=pathlib.Path(loc)

@@ -44,7 +44,9 @@ def main():
     
     if args.list:
         console.rule("Avaliable codecs on PlayQuick")
-        console.print(rich.columns.Columns(data.avaliable_codecs))
+        for k,i in data.avaliable_codecs.items():
+            console.rule(f"{k} Codecs")
+            console.print(rich.columns.Columns(i))
         sys.exit()
     from .app import app
     a=app(console,browser_dir=args.dir,localization=i18n)#,ui_mode=args.subcommand!="noui")

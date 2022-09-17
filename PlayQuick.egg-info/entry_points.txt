@@ -1,3 +1,4 @@
 [console_scripts]
 playquick = playquick.commandline:main
 pq = playquick.commandline:main
+
