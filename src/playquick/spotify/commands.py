@@ -4,6 +4,8 @@ import asyncio
 import os
 import webbrowser
 
+import httpx
+
 from playquick.config import ConfigStore
 from playquick.spotify.auth import SpotifyAuth
 
@@ -36,9 +38,16 @@ def spotify_command(action: str, *, open_browser: bool = True) -> int:
             os.environ.get(name) for name in ("SSH_CLIENT", "SSH_CONNECTION", "SSH_TTY")
         )
         if open_browser and not remote_session:
-            webbrowser.open(request.url)
-        callback_url = input("Callback URL: ").strip()
-        asyncio.run(auth.complete_login(request, callback_url))
+            try:
+                webbrowser.open(request.url)
+            except webbrowser.Error:
+                print("Could not open a browser; use the authorization URL printed above.")
+        try:
+            callback_url = input("Callback URL: ").strip()
+            asyncio.run(auth.complete_login(request, callback_url))
+        except (EOFError, ValueError, RuntimeError, httpx.HTTPError) as error:
+            print(f"Spotify authorization failed: {error}")
+            return 1
         print("Spotify account connected.")
     elif action == "logout":
         asyncio.run(auth.disconnect())
