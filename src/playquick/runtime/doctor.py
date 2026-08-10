@@ -14,4 +14,11 @@ def run_doctor(*, install: bool = False, repair: bool = False) -> int:
     mpv = manager.install(repair=repair) if install or repair else manager.resolve()
     print(f"Platform: {platform.system()} {platform.machine()}")
     print(f"mpv: {mpv or 'not found'}")
-    return 0 if mpv else 1
+    if not mpv:
+        return 1
+    try:
+        print(f"mpv version: {manager.verify(mpv)}")
+    except (OSError, RuntimeError) as error:
+        print(f"mpv check failed: {error}")
+        return 2
+    return 0

@@ -45,7 +45,7 @@ def test_installs_verified_asset(tmp_path: Path) -> None:
     manager = MpvRuntimeManager(
         data_dir=tmp_path, manifest_url="https://example.test/manifest.json", client=client
     )
-    assert manager.install().read_bytes() == b"executable"
+    assert manager.install(verify=False).read_bytes() == b"executable"
 
 
 def test_rejects_checksum_mismatch(tmp_path: Path) -> None:
@@ -76,7 +76,7 @@ def test_rejects_checksum_mismatch(tmp_path: Path) -> None:
         client=httpx.Client(transport=httpx.MockTransport(handler)),
     )
     with pytest.raises(RuntimeError, match="checksum"):
-        manager.install()
+        manager.install(verify=False)
 
 
 def test_rejects_path_traversal(tmp_path: Path) -> None:

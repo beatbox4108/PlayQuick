@@ -6,6 +6,7 @@ import os
 import platform
 import shutil
 import stat
+import subprocess
 import tarfile
 import tempfile
 import zipfile
@@ -88,7 +89,7 @@ class MpvRuntimeManager:
             return self.managed_executable
         return None
 
-    def install(self, *, repair: bool = False) -> Path:
+    def install(self, *, repair: bool = False, verify: bool = True) -> Path:
         manifest_response = self.client.get(self.manifest_url)
         manifest_response.raise_for_status()
         manifest = manifest_response.json()
@@ -130,7 +131,23 @@ class MpvRuntimeManager:
             raise RuntimeError(f"Managed mpv archive did not contain {asset.executable}")
         if os.name != "nt":
             executable.chmod(executable.stat().st_mode | stat.S_IXUSR)
+        if verify:
+            self.verify(executable)
         return executable
+
+    @staticmethod
+    def verify(executable: Path) -> str:
+        result = subprocess.run(
+            [str(executable), "--version"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        if result.returncode != 0:
+            detail = result.stderr.strip() or f"exit code {result.returncode}"
+            raise RuntimeError(f"Managed mpv failed its startup check: {detail}")
+        return result.stdout.splitlines()[0] if result.stdout else "mpv"
 
     @staticmethod
     def _safe_destination(root: Path, member: str) -> Path:
