@@ -29,6 +29,10 @@ dump_build_logs() {
 }
 trap dump_build_logs ERR
 
+git config --global user.name "PlayQuick CI"
+git config --global user.email "playquick-ci@users.noreply.github.com"
+git config --global --add safe.directory /work
+
 git clone https://github.com/shinchiro/mpv-winbuild-cmake.git winbuild
 git -C winbuild checkout "${builder_commit}"
 if [[ "${arch}" == "x86_64" ]]; then
