@@ -11,3 +11,8 @@ build/
 htmlcov/
 .env
 
+# Managed mpv local build caches (large and reproducible)
+winbuild/
+winbuild-out/
+src_packages/
+clang-root/
