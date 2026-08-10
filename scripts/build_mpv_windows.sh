@@ -12,11 +12,16 @@ esac
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
   asciidoc automake autopoint bison build-essential ccache clang cmake curl \
-  docbook2x flex g++-multilib gcc-multilib gettext git gperf libgcrypt-dev \
-  libgmp-dev libmpc-dev libmpfr-dev libtool libtool-bin lld mercurial \
+  docbook2x flex g++-multilib gcc-multilib gettext git gperf gyp libc++-dev \
+  libc++abi-dev libgcrypt-dev libgmp-dev libmimalloc-dev libmpc-dev \
+  libmpfr-dev libtool libtool-bin lld mercurial \
   meson nasm ninja-build p7zip-full pkgconf ragel re2c subversion \
-  texinfo unzip yasm
+  texinfo unzip yasm zip
 python3 -m pip install --break-system-packages jsonschema mako rst2pdf
+
+# Several dependency configure scripts require Bash semantics. This is the
+# builder project's documented Ubuntu setup and is isolated to the CI runner.
+sudo ln -sf /bin/bash /bin/sh
 
 git clone https://github.com/shinchiro/mpv-winbuild-cmake.git winbuild
 git -C winbuild checkout "${builder_commit}"
