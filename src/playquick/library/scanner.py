@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 
 from playquick.library.metadata import read_metadata
@@ -22,6 +24,28 @@ AUDIO_EXTENSIONS = {
 }
 
 
+class ScanPhase(StrEnum):
+    DISCOVERING = "discovering"
+    SCANNING = "scanning"
+    COMPLETE = "complete"
+
+
+@dataclass(slots=True, frozen=True)
+class ScanProgress:
+    phase: ScanPhase
+    root: Path
+    path: Path | None = None
+    processed: int = 0
+    total: int | None = None
+    added: int = 0
+    updated: int = 0
+    skipped: int = 0
+    errors: int = 0
+
+
+ProgressCallback = Callable[[ScanProgress], None]
+
+
 def audio_files(root: Path) -> Iterable[Path]:
     for path in root.rglob("*"):
         supported = path.suffix.lower() in AUDIO_EXTENSIONS
@@ -33,14 +57,25 @@ class LibraryScanner:
     def __init__(self, database: Database) -> None:
         self.database = database
 
-    def scan(self, roots: Iterable[Path]) -> ScanResult:
+    def scan(
+        self,
+        roots: Iterable[Path],
+        *,
+        progress: ProgressCallback | None = None,
+    ) -> ScanResult:
         added = updated = missing = 0
+        skipped = 0
         errors: list[str] = []
         for raw_root in roots:
             root = raw_root.expanduser().resolve()
             if not root.is_dir():
                 errors.append(f"Not a directory: {root}")
                 continue
+            if progress:
+                progress(ScanProgress(ScanPhase.DISCOVERING, root))
+            files = list(audio_files(root))
+            if progress:
+                progress(ScanProgress(ScanPhase.SCANNING, root, total=len(files)))
             with self.database.transaction() as connection:
                 connection.execute(
                     "INSERT OR IGNORE INTO scan_roots(path) VALUES (?)", (str(root),)
@@ -52,7 +87,7 @@ class LibraryScanner:
                     if Path(str(row["path"])).is_relative_to(root)
                 }
                 seen: set[Path] = set()
-                for path in audio_files(root):
+                for processed, path in enumerate(files, start=1):
                     seen.add(path)
                     stat = path.stat()
                     row = connection.execute(
@@ -65,6 +100,21 @@ class LibraryScanner:
                         and int(row["modified_ns"]) == stat.st_mtime_ns
                         and not bool(row["missing"])
                     ):
+                        skipped += 1
+                        if progress:
+                            progress(
+                                ScanProgress(
+                                    ScanPhase.SCANNING,
+                                    root,
+                                    path,
+                                    processed,
+                                    len(files),
+                                    added,
+                                    updated,
+                                    skipped,
+                                    len(errors),
+                                )
+                            )
                         continue
                     metadata = read_metadata(path)
                     if metadata.error:
@@ -96,6 +146,20 @@ class LibraryScanner:
                         updated += 1
                     else:
                         added += 1
+                    if progress:
+                        progress(
+                            ScanProgress(
+                                ScanPhase.SCANNING,
+                                root,
+                                path,
+                                processed,
+                                len(files),
+                                added,
+                                updated,
+                                skipped,
+                                len(errors),
+                            )
+                        )
                 removed = known_under_root - seen
                 if removed:
                     connection.executemany(
@@ -104,4 +168,17 @@ class LibraryScanner:
                         ((str(path),) for path in removed),
                     )
                     missing += len(removed)
+            if progress:
+                progress(
+                    ScanProgress(
+                        ScanPhase.COMPLETE,
+                        root,
+                        processed=len(files),
+                        total=len(files),
+                        added=added,
+                        updated=updated,
+                        skipped=skipped,
+                        errors=len(errors),
+                    )
+                )
         return ScanResult(added, updated, missing, tuple(errors))

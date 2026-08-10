@@ -15,6 +15,7 @@ dependencies = [
   "keyring>=25,<27",
   "mutagen>=1.47,<2",
   "platformdirs>=4.3,<5",
+  "rich>=13.9,<16",
   "textual>=3.0,<9",
   "tomli-w>=1.2,<2",
   "watchfiles>=1.0,<2",
@@ -55,4 +56,3 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 python_version = "3.12"
 strict = true
 packages = ["playquick"]
-
