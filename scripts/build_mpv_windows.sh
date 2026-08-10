@@ -20,20 +20,36 @@ if [[ "${PLAYQUICK_MPV_CONTAINER:-}" != "1" ]]; then
   exit
 fi
 
+dump_build_logs() {
+  find winbuild-out -type f -name '*.log' -print0 2>/dev/null |
+    while IFS= read -r -d '' log; do
+      echo "===== ${log} ====="
+      tail -n 80 "${log}"
+    done
+}
+trap dump_build_logs ERR
+
 git clone https://github.com/shinchiro/mpv-winbuild-cmake.git winbuild
 git -C winbuild checkout "${builder_commit}"
 if [[ "${arch}" == "x86_64" ]]; then
-  cmake -S winbuild -B winbuild-out -G Ninja \
+  cmake --fresh -S winbuild -B winbuild-out -G Ninja \
     -DTARGET_ARCH="${target}" \
-    -DMINGW_INSTALL_PREFIX="${PWD}/mingw-root"
+    -DSINGLE_SOURCE_LOCATION="${PWD}/src_packages" \
+    -DRUSTUP_LOCATION="${PWD}/clang-root/install_rustup" \
+    -DENABLE_CCACHE=ON
+  ninja -C winbuild-out download || true
   ninja -C winbuild-out gcc
   ninja -C winbuild-out mpv
 else
-  cmake -S winbuild -B winbuild-out -G Ninja \
+  cmake --fresh -S winbuild -B winbuild-out -G Ninja \
     -DTARGET_ARCH="${target}" \
     -DCOMPILER_TOOLCHAIN=clang \
     -DCMAKE_INSTALL_PREFIX="${PWD}/clang-root" \
-    -DMINGW_INSTALL_PREFIX="${PWD}/mingw-root"
+    -DMINGW_INSTALL_PREFIX="${PWD}/winbuild-out/${target}" \
+    -DSINGLE_SOURCE_LOCATION="${PWD}/src_packages" \
+    -DRUSTUP_LOCATION="${PWD}/clang-root/install_rustup" \
+    -DENABLE_CCACHE=ON
+  ninja -C winbuild-out download || true
   ninja -C winbuild-out llvm
   ninja -C winbuild-out rustup
   ninja -C winbuild-out llvm-clang
