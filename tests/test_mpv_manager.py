@@ -83,3 +83,10 @@ def test_rejects_path_traversal(tmp_path: Path) -> None:
     manager = MpvRuntimeManager(data_dir=tmp_path)
     with pytest.raises(RuntimeError, match="Unsafe"):
         manager._safe_destination(tmp_path, "../escape")
+
+
+def test_resolver_prefers_configured_binary(tmp_path: Path) -> None:
+    configured = tmp_path / "custom-mpv"
+    configured.write_bytes(b"binary")
+    manager = MpvRuntimeManager(configured_path=configured, data_dir=tmp_path / "managed")
+    assert manager.resolve() == configured

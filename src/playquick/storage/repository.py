@@ -25,11 +25,20 @@ class LibraryRepository:
     def __init__(self, database: Database) -> None:
         self.database = database
 
-    def tracks(self, *, limit: int = 500, offset: int = 0) -> list[Track]:
+    def tracks(
+        self, *, limit: int = 500, offset: int = 0, order_by: str = "title"
+    ) -> list[Track]:
+        order = {
+            "title": "title COLLATE NOCASE",
+            "artist": "artist COLLATE NOCASE, album COLLATE NOCASE, title COLLATE NOCASE",
+            "album": "album COLLATE NOCASE, title COLLATE NOCASE",
+            "genre": "genre COLLATE NOCASE, artist COLLATE NOCASE, title COLLATE NOCASE",
+            "path": "path COLLATE NOCASE",
+        }.get(order_by, "title COLLATE NOCASE")
         with self.database.connect() as connection:
             rows = connection.execute(
                 "SELECT * FROM tracks WHERE missing = 0 "
-                "ORDER BY title COLLATE NOCASE LIMIT ? OFFSET ?",
+                f"ORDER BY {order} LIMIT ? OFFSET ?",
                 (limit, offset),
             ).fetchall()
         return [_track(row) for row in rows]

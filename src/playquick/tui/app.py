@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import ClassVar
 
@@ -9,6 +10,7 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import DataTable, Footer, Header, Input, Label, ListItem, ListView
 
 from playquick.config import AppConfig, ConfigStore, default_database_path
+from playquick.library import LibraryScanner
 from playquick.models import PlaybackStatus, RepeatMode, Track
 from playquick.playback.mpv import MpvController
 from playquick.playback.queue import PlaybackQueue
@@ -58,6 +60,10 @@ class PlayQuickApp(App[None]):
         ("slash", "search", "Filter"),
         ("ctrl+f", "search", "Search"),
         ("u", "undo", "Undo"),
+        ("delete", "queue_delete", "Remove"),
+        ("ctrl+up", "queue_move(-1)", "Move up"),
+        ("ctrl+down", "queue_move(1)", "Move down"),
+        ("f", "favorite", "Favorite"),
         ("question_mark", "help", "Help"),
         ("comma", "settings", "Settings"),
         ("plus", "volume(5)", "Volume +"),
@@ -97,6 +103,11 @@ class PlayQuickApp(App[None]):
         with Horizontal(id="body"):
             yield ListView(
                 ListItem(Label("All Tracks"), id="source-all"),
+                ListItem(Label("Albums"), id="source-albums"),
+                ListItem(Label("Artists"), id="source-artists"),
+                ListItem(Label("Genres"), id="source-genres"),
+                ListItem(Label("Folders"), id="source-folders"),
+                ListItem(Label("Playlists"), id="source-playlists"),
                 ListItem(Label("Favorites"), id="source-favorites"),
                 ListItem(Label("History"), id="source-history"),
                 ListItem(Label("Spotify Remote"), id="source-spotify"),
@@ -115,12 +126,28 @@ class PlayQuickApp(App[None]):
         queue.add_columns("Up next", "Artist")
         self.load_tracks(self.repository.tracks())
         self.refresh_queue()
+        if self.config.music_dirs:
+            self.run_worker(self._scan_configured(), name="library-scan", exclusive=True)
         executable = self.runtime.resolve()
         if executable:
             await self._start_player(executable)
         elif self._setup_prompt:
             self.push_screen(MpvSetupScreen(), self._mpv_setup_result)
         self.set_interval(1.0, self._poll_player)
+
+    async def _scan_configured(self) -> None:
+        roots = [Path(value) for value in self.config.music_dirs]
+        result = await asyncio.to_thread(LibraryScanner(self.database).scan, roots)
+        self.load_tracks(self.repository.tracks())
+        self.notify(
+            f"Library scan: {result.added} added, {result.updated} updated, "
+            f"{result.missing} missing"
+        )
+        if result.errors:
+            self.notify(
+                f"Library scan completed with {len(result.errors)} warnings",
+                severity="warning",
+            )
 
     def on_resize(self, event: events.Resize) -> None:
         self.set_class(event.size.width < 70, "compact")
@@ -205,6 +232,16 @@ class PlayQuickApp(App[None]):
             self.load_tracks(self.repository.favorites())
         elif source_id == "source-history":
             self.load_tracks(self.repository.history())
+        elif source_id == "source-albums":
+            self.load_tracks(self.repository.tracks(order_by="album"))
+        elif source_id == "source-artists":
+            self.load_tracks(self.repository.tracks(order_by="artist"))
+        elif source_id == "source-genres":
+            self.load_tracks(self.repository.tracks(order_by="genre"))
+        elif source_id == "source-folders":
+            self.load_tracks(self.repository.tracks(order_by="path"))
+        elif source_id == "source-playlists":
+            self.notify("Playlist editor will appear after selecting or creating a playlist")
         elif source_id == "source-spotify":
             self.action_spotify()
         else:
@@ -261,6 +298,27 @@ class PlayQuickApp(App[None]):
             self.refresh_queue()
             self.notify("Queue edit undone")
 
+    def action_queue_delete(self) -> None:
+        table = self.query_one("#queue", DataTable)
+        if self.focused is table and 0 <= table.cursor_row < len(self.queue.explicit):
+            track = self.queue.remove(table.cursor_row)
+            self.refresh_queue()
+            self.notify(f"Removed {track.title}; press u to undo")
+
+    def action_queue_move(self, change: int) -> None:
+        table = self.query_one("#queue", DataTable)
+        source = table.cursor_row
+        target = source + change
+        if self.focused is table and 0 <= source < len(self.queue.explicit) and target >= 0:
+            self.queue.move(source, target)
+            self.refresh_queue()
+            table.move_cursor(row=max(0, min(target, len(self.queue.explicit) - 1)))
+
+    def action_favorite(self) -> None:
+        if track := self.selected_track():
+            self.repository.set_favorite(track.id, True)
+            self.notify(f"Favorited {track.title}")
+
     def action_help(self) -> None:
         self.push_screen(HelpScreen())
 
@@ -289,6 +347,8 @@ class PlayQuickApp(App[None]):
         self.config_store.save(config)
         self.dark = config.theme != "light"
         self.notify("Settings saved")
+        if config.music_dirs:
+            self.run_worker(self._scan_configured(), name="library-scan", exclusive=True)
 
     async def action_volume(self, change: int) -> None:
         if self.controller:

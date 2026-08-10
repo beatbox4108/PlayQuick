@@ -64,3 +64,25 @@ async def test_player_commands_accept_empty_response() -> None:
         ),
     )
     await client.play(uri="spotify:track:1")
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_retries_once() -> None:
+    calls = 0
+
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return httpx.Response(429, headers={"Retry-After": "0"})
+        return httpx.Response(200, json={"devices": []})
+
+    auth = SpotifyAuth("client", (), store=MemoryStore())
+    client = SpotifyClient(
+        auth,
+        httpx.AsyncClient(
+            base_url="https://api.spotify.test", transport=httpx.MockTransport(handler)
+        ),
+    )
+    assert await client.devices() == []
+    assert calls == 2
