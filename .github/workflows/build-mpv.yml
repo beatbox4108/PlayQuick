@@ -63,7 +63,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Add corresponding source
-        run: curl --fail --location --output dist/mpv-v0.41.0-source.tar.gz https://github.com/mpv-player/mpv/archive/refs/tags/v0.41.0.tar.gz
+        run: |
+          curl --fail --location --output dist/mpv-v0.41.0-source.tar.gz https://github.com/mpv-player/mpv/archive/refs/tags/v0.41.0.tar.gz
+          curl --fail --location --output dist/mpv-winbuild-cmake-cd1edc11-source.tar.gz https://github.com/shinchiro/mpv-winbuild-cmake/archive/cd1edc11dc6887a50f705717619d879f5a93a488.tar.gz
       - name: Create checksum manifest
         run: python scripts/create_mpv_manifest.py dist "${{ github.repository }}" "${{ github.ref_name }}"
       - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
@@ -73,4 +75,3 @@ jobs:
             dist/mpv-*.zip
             dist/mpv-manifest.json
           generate_release_notes: true
-

@@ -43,10 +43,13 @@ else
   ninja -C winbuild-out mpv
 fi
 
-mpv_exe="$(find winbuild-out -type f -name mpv.exe -print -quit)"
-test -n "${mpv_exe}"
+ninja -C winbuild-out mpv-packaging
+mpv_archive="$(find winbuild-out -maxdepth 1 -type f -name 'mpv*.7z' -print -quit)"
+test -n "${mpv_archive}"
 package="mpv-windows-${arch}"
 mkdir -p "dist/${package}"
-cp "${mpv_exe}" "dist/${package}/mpv.exe"
-cp winbuild/LICENSE* "dist/${package}/" 2>/dev/null || true
+7z x -y "${mpv_archive}" -o"dist/${package}"
+test -n "$(find "dist/${package}" -type f -name mpv.exe -print -quit)"
+cp THIRD_PARTY_NOTICES.md "dist/${package}/"
+cp scripts/build_mpv_windows.sh "dist/${package}/BUILD_RECIPE.sh"
 (cd "dist/${package}" && zip -9 -r "../${package}.zip" .)

@@ -27,4 +27,6 @@ mkdir -p "dist/${package}"
 cp mpv-source/build/mpv "dist/${package}/mpv"
 cp mpv-source/LICENSE.GPL "dist/${package}/LICENSE.GPL"
 cp mpv-source/LICENSE.LGPL "dist/${package}/LICENSE.LGPL"
+cp THIRD_PARTY_NOTICES.md "dist/${package}/"
+cp scripts/build_mpv_linux.sh "dist/${package}/BUILD_RECIPE.sh"
 tar -C "dist/${package}" -czf "dist/${package}.tar.gz" .

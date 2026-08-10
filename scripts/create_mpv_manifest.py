@@ -32,6 +32,13 @@ def main(directory: Path, repository: str, tag: str) -> None:
         "mpv_version": "0.41.0",
         "license": "GPL-2.0-or-later",
         "source_url": "https://github.com/mpv-player/mpv/archive/refs/tags/v0.41.0.tar.gz",
+        "windows_builder_source_url": (
+            "https://github.com/shinchiro/mpv-winbuild-cmake/archive/"
+            "cd1edc11dc6887a50f705717619d879f5a93a488.tar.gz"
+        ),
+        "build_recipe_url": (
+            f"https://github.com/{repository}/tree/{tag}/scripts"
+        ),
         "assets": assets,
     }
     (directory / "mpv-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
