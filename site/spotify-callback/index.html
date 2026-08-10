@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    >
+    <link rel="stylesheet" href="./callback.css">
+    <script src="./callback.js" defer></script>
+    <title>Return to PlayQuick</title>
+  </head>
+  <body>
+    <main class="card">
+      <p class="eyebrow">SPOTIFY AUTHORIZATION</p>
+      <h1 id="heading">Return to PlayQuick</h1>
+      <p id="status" class="status" role="status">
+        Reading the authorization response…
+      </p>
+      <section id="callback" hidden>
+        <label for="callback-url">Paste this full URL into PlayQuick</label>
+        <textarea id="callback-url" rows="5" readonly spellcheck="false"></textarea>
+        <button id="copy" class="button" type="button">Copy callback URL</button>
+        <p id="copy-status" class="copy-status" aria-live="polite"></p>
+      </section>
+      <p class="privacy">
+        This page's code does not exchange tokens, persist the response, or make network
+        requests. The static host necessarily receives the initial HTTPS request. The
+        address-bar query is removed after it is read.
+      </p>
+      <p class="privacy" lang="ja">
+        このページ自身はトークン交換・保存・追加通信を行いません。静的ホストは最初の
+        HTTPSリクエストを受信します。表示後、認証情報をアドレスバーから取り除きます。
+      </p>
+    </main>
+  </body>
+</html>

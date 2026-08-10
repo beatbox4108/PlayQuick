@@ -1,0 +1,74 @@
+:root {
+  color-scheme: dark;
+  font-family: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  background: #07110d;
+  color: #e8fff3;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at 20% 10%, #153d2b 0, transparent 35rem),
+    #07110d;
+}
+
+.card {
+  width: min(44rem, 100%);
+  padding: clamp(1.5rem, 5vw, 3rem);
+  border: 1px solid #2d7352;
+  border-radius: 1rem;
+  background: rgb(8 25 17 / 92%);
+  box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 45%);
+}
+
+.eyebrow {
+  margin: 0 0 1rem;
+  color: #62e6a5;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+}
+
+h1 { margin: 0 0 1rem; font-size: clamp(1.8rem, 7vw, 3.2rem); }
+.status { color: #b8cfc2; line-height: 1.6; }
+.status.success { color: #8ff0bd; }
+.status.error { color: #ffb4ab; }
+
+section { margin: 1.75rem 0; }
+label { display: block; margin-bottom: .65rem; font-weight: 700; }
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  padding: .9rem;
+  border: 1px solid #3b7658;
+  border-radius: .5rem;
+  background: #030a07;
+  color: #dffff0;
+  font: inherit;
+  overflow-wrap: anywhere;
+}
+
+.button {
+  display: inline-block;
+  margin-top: .85rem;
+  padding: .75rem 1rem;
+  border: 0;
+  border-radius: .5rem;
+  background: #42d392;
+  color: #03170d;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:hover, .button:focus-visible { background: #83efbd; outline: none; }
+.copy-status { min-height: 1.5em; color: #8ff0bd; }
+.privacy { margin-top: 1.25rem; color: #8ba398; font-size: .82rem; line-height: 1.55; }
