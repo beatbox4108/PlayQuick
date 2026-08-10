@@ -9,7 +9,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version="%(prog)s 0.1.0")
     subcommands = parser.add_subparsers(dest="command")
     subcommands.add_parser("run", help="Launch the TUI")
-    subcommands.add_parser("doctor", help="Inspect the runtime environment")
+    doctor = subcommands.add_parser("doctor", help="Inspect the runtime environment")
+    doctor.add_argument("--install-mpv", action="store_true")
+    doctor.add_argument("--repair-mpv", action="store_true")
     scan = subcommands.add_parser("scan", help="Scan a music directory")
     scan.add_argument("paths", nargs="+")
     return parser
@@ -25,9 +27,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     if args.command == "doctor":
         from playquick.runtime.doctor import run_doctor
 
-        raise SystemExit(run_doctor())
+        raise SystemExit(
+            run_doctor(install=args.install_mpv, repair=args.repair_mpv)
+        )
     if args.command == "scan":
         from playquick.commands import scan_paths
 
         raise SystemExit(scan_paths(args.paths))
-
