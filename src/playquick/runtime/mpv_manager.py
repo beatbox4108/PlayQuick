@@ -124,9 +124,19 @@ class MpvRuntimeManager:
             self._extract(archive, extracted, asset.archive)
             staged = temporary / "staged"
             shutil.copytree(extracted, staged)
+            if not (staged / asset.executable).is_file():
+                raise RuntimeError(
+                    f"Managed mpv archive did not contain {asset.executable}"
+                )
+            backup = temporary / "previous"
             if target.exists():
-                shutil.rmtree(target)
-            staged.replace(target)
+                target.replace(backup)
+            try:
+                staged.replace(target)
+            except Exception:
+                if backup.exists() and not target.exists():
+                    backup.replace(target)
+                raise
         if not executable.is_file():
             raise RuntimeError(f"Managed mpv archive did not contain {asset.executable}")
         if os.name != "nt":

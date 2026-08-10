@@ -90,3 +90,41 @@ def test_resolver_prefers_configured_binary(tmp_path: Path) -> None:
     configured.write_bytes(b"binary")
     manager = MpvRuntimeManager(configured_path=configured, data_dir=tmp_path / "managed")
     assert manager.resolve() == configured
+
+
+def test_failed_repair_preserves_existing_runtime(tmp_path: Path) -> None:
+    system, arch = platform_key()
+    executable = "mpv.exe" if system == "windows" else "mpv"
+    payload = zip_payload("different-name")
+    manifest = {
+        "assets": [
+            {
+                "platform": system,
+                "arch": arch,
+                "url": "https://example.test/mpv.zip",
+                "sha256": hashlib.sha256(payload).hexdigest(),
+                "size": len(payload),
+                "archive": "zip",
+                "executable": executable,
+            }
+        ]
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "manifest" in str(request.url):
+            return httpx.Response(200, json=manifest)
+        return httpx.Response(200, content=payload)
+
+    manager = MpvRuntimeManager(
+        data_dir=tmp_path,
+        manifest_url="https://example.test/manifest.json",
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    existing = manager.managed_executable
+    existing.parent.mkdir(parents=True)
+    existing.write_bytes(b"known-good")
+
+    with pytest.raises(RuntimeError, match="did not contain"):
+        manager.install(repair=True, verify=False)
+
+    assert existing.read_bytes() == b"known-good"
