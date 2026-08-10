@@ -19,7 +19,7 @@ class UnixSocketTransport:
         self._writer: asyncio.StreamWriter | None = None
 
     async def connect(self) -> None:
-        open_connection: Any = asyncio.open_unix_connection  # type: ignore[attr-defined]
+        open_connection: Any = asyncio.open_unix_connection  # type: ignore[attr-defined,unused-ignore]
         self._reader, self._writer = await open_connection(str(self.path))
 
     async def close(self) -> None:
