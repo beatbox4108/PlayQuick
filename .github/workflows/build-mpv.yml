@@ -1,0 +1,76 @@
+name: Build managed mpv
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "mpv-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.platform }}-${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux
+            arch: x86_64
+            runner: ubuntu-24.04
+          - platform: linux
+            arch: arm64
+            runner: ubuntu-24.04-arm
+          - platform: windows
+            arch: x86_64
+            runner: ubuntu-24.04
+          - platform: windows
+            arch: arm64
+            runner: ubuntu-24.04
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build Linux runtime
+        if: matrix.platform == 'linux'
+        run: scripts/build_mpv_linux.sh "${{ matrix.arch }}"
+      - name: Build Windows runtime
+        if: matrix.platform == 'windows'
+        run: scripts/build_mpv_windows.sh "${{ matrix.arch }}"
+      - name: Smoke test native Linux executable
+        if: matrix.platform == 'linux'
+        run: "dist/mpv-linux-${{ matrix.arch }}/mpv --version"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mpv-${{ matrix.platform }}-${{ matrix.arch }}
+          path: dist/mpv-${{ matrix.platform }}-${{ matrix.arch }}.*
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - name: Add corresponding source
+        run: curl --fail --location --output dist/mpv-v0.41.0-source.tar.gz https://github.com/mpv-player/mpv/archive/refs/tags/v0.41.0.tar.gz
+      - name: Create checksum manifest
+        run: python scripts/create_mpv_manifest.py dist "${{ github.repository }}" "${{ github.ref_name }}"
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          files: |
+            dist/mpv-*.tar.gz
+            dist/mpv-*.zip
+            dist/mpv-manifest.json
+          generate_release_notes: true
+
