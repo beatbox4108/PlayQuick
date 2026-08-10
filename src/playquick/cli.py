@@ -14,6 +14,8 @@ def build_parser() -> argparse.ArgumentParser:
     doctor.add_argument("--repair-mpv", action="store_true")
     scan = subcommands.add_parser("scan", help="Scan a music directory")
     scan.add_argument("paths", nargs="+")
+    spotify = subcommands.add_parser("spotify", help="Manage Spotify Remote authorization")
+    spotify.add_argument("action", choices=("login", "logout"))
     return parser
 
 
@@ -34,3 +36,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         from playquick.commands import scan_paths
 
         raise SystemExit(scan_paths(args.paths))
+    if args.command == "spotify":
+        from playquick.spotify.commands import spotify_command
+
+        raise SystemExit(spotify_command(args.action))
