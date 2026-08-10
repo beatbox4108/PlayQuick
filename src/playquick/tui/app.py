@@ -11,7 +11,7 @@ from textual.widgets import DataTable, Footer, Header, Input, Label, ListItem, L
 
 from playquick.config import AppConfig, ConfigStore, default_database_path
 from playquick.library import LibraryScanner
-from playquick.models import PlaybackStatus, RepeatMode, Track
+from playquick.models import LibraryGroup, LibraryGroupKind, PlaybackStatus, RepeatMode, Track
 from playquick.playback.mpv import MpvController
 from playquick.playback.queue import PlaybackQueue
 from playquick.playback.session import PlaybackSession
@@ -86,6 +86,7 @@ class PlayQuickApp(App[None]):
         ("r", "repeat", "Repeat"),
         ("j", "cursor_down", "Down"),
         ("k", "cursor_up", "Up"),
+        ("backspace", "browser_back", "Back"),
     ]
 
     def __init__(
@@ -107,6 +108,10 @@ class PlayQuickApp(App[None]):
         self.controller: MpvController | None = None
         self.session: PlaybackSession | None = None
         self._tracks: list[Track] = []
+        self._groups: list[LibraryGroup] = []
+        self._group_kind: LibraryGroupKind | None = None
+        self._drilldown_kind: LibraryGroupKind | None = None
+        self._library_layout = ""
         self._setup_prompt = setup_prompt
         self.dark = self.config.theme != "light"
 
@@ -133,11 +138,6 @@ class PlayQuickApp(App[None]):
         yield Footer()
 
     async def on_mount(self) -> None:
-        library = self.query_one("#library", DataTable)
-        library.add_column("Title", key="title", width=TITLE_COLUMN_WIDTH)
-        library.add_column("Artist", key="artist", width=ARTIST_COLUMN_WIDTH)
-        library.add_column("Album", key="album", width=ALBUM_COLUMN_WIDTH)
-        library.add_column("Time", key="time", width=8)
         queue = self.query_one("#queue", DataTable)
         queue.add_column("Up next", key="title", width=TITLE_COLUMN_WIDTH)
         queue.add_column("Artist", key="artist", width=ARTIST_COLUMN_WIDTH)
@@ -205,8 +205,11 @@ class PlayQuickApp(App[None]):
 
     def load_tracks(self, tracks: list[Track]) -> None:
         self._tracks = tracks
+        self._groups = []
+        self._group_kind = None
+        self._drilldown_kind = None
         table = self.query_one("#library", DataTable)
-        table.clear()
+        self._configure_track_columns(table)
         for track in tracks:
             minutes, seconds = divmod(int(track.duration), 60)
             table.add_row(
@@ -216,6 +219,48 @@ class PlayQuickApp(App[None]):
                 f"{minutes}:{seconds:02d}",
                 key=str(track.id),
             )
+
+    def _configure_track_columns(self, table: DataTable[object]) -> None:
+        if self._library_layout == "tracks":
+            table.clear()
+            return
+        table.clear(columns=True)
+        table.add_column("Title", key="title", width=TITLE_COLUMN_WIDTH)
+        table.add_column("Artist", key="artist", width=ARTIST_COLUMN_WIDTH)
+        table.add_column("Album", key="album", width=ALBUM_COLUMN_WIDTH)
+        table.add_column("Time", key="time", width=8)
+        self._library_layout = "tracks"
+
+    def show_groups(self, kind: LibraryGroupKind) -> None:
+        self._tracks = []
+        self._groups = self.repository.groups(kind)
+        self._group_kind = kind
+        self._drilldown_kind = None
+        table = self.query_one("#library", DataTable)
+        if self._library_layout == f"groups:{kind}":
+            table.clear()
+        else:
+            table.clear(columns=True)
+            table.add_column(kind.value.title(), key="name", width=TITLE_COLUMN_WIDTH)
+            table.add_column("Details", key="detail", width=ALBUM_COLUMN_WIDTH)
+            table.add_column("Tracks", key="tracks", width=8)
+            table.add_column("Time", key="time", width=8)
+            self._library_layout = f"groups:{kind}"
+        for group in self._groups:
+            minutes, seconds = divmod(int(group.duration), 60)
+            table.add_row(
+                table_text(group.name, TITLE_COLUMN_WIDTH),
+                table_text(group.detail, ALBUM_COLUMN_WIDTH),
+                str(group.track_count),
+                f"{minutes}:{seconds:02d}",
+                key=f"{kind}:{group.value}",
+            )
+
+    def _open_group(self, group: LibraryGroup) -> None:
+        tracks = self.repository.tracks_for_group(group.kind, group.value)
+        self.load_tracks(tracks)
+        self._drilldown_kind = group.kind
+        self.notify(f"{group.kind.value.title()}: {group.name} · Backspace to go back")
 
     def selected_track(self) -> Track | None:
         table = self.query_one("#library", DataTable)
@@ -233,13 +278,17 @@ class PlayQuickApp(App[None]):
 
     @on(DataTable.RowSelected, "#library")
     async def play_selected(self) -> None:
+        row = self.query_one("#library", DataTable).cursor_row
+        if self._group_kind is not None:
+            if 0 <= row < len(self._groups):
+                self._open_group(self._groups[row])
+            return
         if not self.session:
             self.notify(
                 "mpv is not available; run playquick doctor --install-mpv",
                 severity="warning",
             )
             return
-        row = self.query_one("#library", DataTable).cursor_row
         if 0 <= row < len(self._tracks):
             await self.session.play_from(self._tracks, row)
             self.query_one(PlayerBar).state = self.controller.state  # type: ignore[union-attr]
@@ -253,11 +302,11 @@ class PlayQuickApp(App[None]):
         elif source_id == "source-history":
             self.load_tracks(self.repository.history())
         elif source_id == "source-albums":
-            self.load_tracks(self.repository.tracks(order_by="album"))
+            self.show_groups(LibraryGroupKind.ALBUM)
         elif source_id == "source-artists":
-            self.load_tracks(self.repository.tracks(order_by="artist"))
+            self.show_groups(LibraryGroupKind.ARTIST)
         elif source_id == "source-genres":
-            self.load_tracks(self.repository.tracks(order_by="genre"))
+            self.show_groups(LibraryGroupKind.GENRE)
         elif source_id == "source-folders":
             self.load_tracks(self.repository.tracks(order_by="path"))
         elif source_id == "source-playlists":
@@ -432,6 +481,11 @@ class PlayQuickApp(App[None]):
     def action_cursor_up(self) -> None:
         if isinstance(self.focused, DataTable):
             self.focused.action_cursor_up()
+
+    def action_browser_back(self) -> None:
+        if self._drilldown_kind is not None:
+            self.show_groups(self._drilldown_kind)
+            self.query_one("#library", DataTable).focus()
 
     async def action_quit_app(self) -> None:
         if self.session:

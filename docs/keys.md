@@ -15,6 +15,7 @@
 | `u` | Undo queue edit |
 | `f` / `p` | Add to favorites / Quick Picks playlist |
 | `Ctrl+1` / `Ctrl+2` | Local / Spotify Remote |
+| `Backspace` | Return from album, artist, or genre tracks |
 | `,` | Settings |
 | `?` | Context help |
 | `Ctrl+q` | Save session and quit |

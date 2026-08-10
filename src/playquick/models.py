@@ -19,6 +19,12 @@ class RepeatMode(StrEnum):
     ALL = "all"
 
 
+class LibraryGroupKind(StrEnum):
+    ALBUM = "album"
+    ARTIST = "artist"
+    GENRE = "genre"
+
+
 @dataclass(slots=True, frozen=True)
 class Track:
     id: int
@@ -29,6 +35,16 @@ class Track:
     genre: str = ""
     duration: float = 0.0
     missing: bool = False
+
+
+@dataclass(slots=True, frozen=True)
+class LibraryGroup:
+    kind: LibraryGroupKind
+    value: str
+    name: str
+    detail: str
+    track_count: int
+    duration: float
 
 
 @dataclass(slots=True)
@@ -57,4 +73,3 @@ class ScanResult:
     updated: int = 0
     missing: int = 0
     errors: tuple[str, ...] = field(default_factory=tuple)
-

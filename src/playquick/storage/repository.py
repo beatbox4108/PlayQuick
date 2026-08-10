@@ -4,7 +4,7 @@ import sqlite3
 from collections.abc import Sequence
 from pathlib import Path
 
-from playquick.models import QueueItem, Track
+from playquick.models import LibraryGroup, LibraryGroupKind, QueueItem, Track
 from playquick.storage.database import Database
 
 
@@ -25,9 +25,7 @@ class LibraryRepository:
     def __init__(self, database: Database) -> None:
         self.database = database
 
-    def tracks(
-        self, *, limit: int = 500, offset: int = 0, order_by: str = "title"
-    ) -> list[Track]:
+    def tracks(self, *, limit: int = 500, offset: int = 0, order_by: str = "title") -> list[Track]:
         order = {
             "title": "title COLLATE NOCASE",
             "artist": "artist COLLATE NOCASE, album COLLATE NOCASE, title COLLATE NOCASE",
@@ -37,8 +35,7 @@ class LibraryRepository:
         }.get(order_by, "title COLLATE NOCASE")
         with self.database.connect() as connection:
             rows = connection.execute(
-                "SELECT * FROM tracks WHERE missing = 0 "
-                f"ORDER BY {order} LIMIT ? OFFSET ?",
+                f"SELECT * FROM tracks WHERE missing = 0 ORDER BY {order} LIMIT ? OFFSET ?",
                 (limit, offset),
             ).fetchall()
         return [_track(row) for row in rows]
@@ -51,6 +48,58 @@ class LibraryRepository:
                    (title LIKE ? OR artist LIKE ? OR album LIKE ? OR genre LIKE ?)
                    ORDER BY title COLLATE NOCASE LIMIT ?""",
                 (pattern, pattern, pattern, pattern, limit),
+            ).fetchall()
+        return [_track(row) for row in rows]
+
+    def groups(self, kind: LibraryGroupKind) -> list[LibraryGroup]:
+        selections = {
+            LibraryGroupKind.ALBUM: (
+                "album",
+                "CASE WHEN COUNT(DISTINCT artist) = 1 THEN MIN(artist) ELSE 'Various Artists' END",
+            ),
+            LibraryGroupKind.ARTIST: (
+                "artist",
+                "CAST(COUNT(DISTINCT album) AS TEXT) || "
+                "CASE WHEN COUNT(DISTINCT album) = 1 THEN ' album' ELSE ' albums' END",
+            ),
+            LibraryGroupKind.GENRE: (
+                "genre",
+                "CAST(COUNT(DISTINCT artist) AS TEXT) || "
+                "CASE WHEN COUNT(DISTINCT artist) = 1 THEN ' artist' ELSE ' artists' END",
+            ),
+        }
+        column, detail = selections[kind]
+        with self.database.connect() as connection:
+            rows = connection.execute(
+                f"""SELECT {column} value, {detail} detail,
+                           COUNT(*) track_count, COALESCE(SUM(duration), 0) duration
+                    FROM tracks WHERE missing = 0
+                    GROUP BY {column} ORDER BY {column} COLLATE NOCASE"""
+            ).fetchall()
+        return [
+            LibraryGroup(
+                kind=kind,
+                value=str(row["value"]),
+                name=str(row["value"]) or "Unknown Genre",
+                detail=str(row["detail"]),
+                track_count=int(row["track_count"]),
+                duration=float(row["duration"]),
+            )
+            for row in rows
+        ]
+
+    def tracks_for_group(self, kind: LibraryGroupKind, value: str) -> list[Track]:
+        column = {
+            LibraryGroupKind.ALBUM: "album",
+            LibraryGroupKind.ARTIST: "artist",
+            LibraryGroupKind.GENRE: "genre",
+        }[kind]
+        with self.database.connect() as connection:
+            rows = connection.execute(
+                f"""SELECT * FROM tracks
+                    WHERE missing = 0 AND {column} = ?
+                    ORDER BY album COLLATE NOCASE, title COLLATE NOCASE""",
+                (value,),
             ).fetchall()
         return [_track(row) for row in rows]
 
