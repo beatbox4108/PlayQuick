@@ -40,6 +40,19 @@ class SpotifyRemoteController:
     async def playlists(self, *, offset: int = 0) -> list[SpotifyContainer]:
         return await self.client.playlists(offset=offset)
 
+    async def album_tracks(self, album_id: str, *, offset: int = 0) -> list[SpotifyTrack]:
+        return await self.client.album_tracks(album_id, offset=offset)
+
+    async def playlist_tracks(
+        self, playlist_id: str, *, offset: int = 0
+    ) -> list[SpotifyTrack]:
+        return await self.client.playlist_tracks(playlist_id, offset=offset)
+
+    async def artist_albums(
+        self, artist_id: str, *, offset: int = 0
+    ) -> list[SpotifyContainer]:
+        return await self.client.artist_albums(artist_id, offset=offset)
+
     async def recent(self) -> list[SpotifyTrack]:
         return await self.client.recent()
 

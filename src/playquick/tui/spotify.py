@@ -11,7 +11,7 @@ from textual.screen import Screen
 from textual.widgets import DataTable, Footer, Input, Label, ListItem, ListView, Select, Static
 
 from playquick.spotify.controller import SpotifyRemoteController
-from playquick.spotify.models import SpotifyPlayback, SpotifyTrack
+from playquick.spotify.models import SpotifyContainer, SpotifyPlayback, SpotifyTrack
 
 
 class SpotifyStatus(Static):
@@ -56,6 +56,8 @@ class SpotifyScreen(Screen[None]):
         self.controller = controller
         self.extended = extended
         self.tracks: list[SpotifyTrack] = []
+        self.containers: list[SpotifyContainer] = []
+        self.mode = "tracks"
         self.search_offset = 0
 
     def compose(self) -> ComposeResult:
@@ -65,6 +67,8 @@ class SpotifyScreen(Screen[None]):
             yield ListView(
                 ListItem(Label("Search"), id="spotify-source-search"),
                 ListItem(Label("Saved Tracks"), id="spotify-source-saved"),
+                ListItem(Label("Saved Albums"), id="spotify-source-albums"),
+                ListItem(Label("My Playlists"), id="spotify-source-playlists"),
                 ListItem(Label("Recently Played"), id="spotify-source-recent"),
                 ListItem(Label("Top Tracks"), id="spotify-source-top"),
                 id="spotify-sources",
@@ -100,11 +104,22 @@ class SpotifyScreen(Screen[None]):
             )
 
     async def _show_tracks(self, tracks: list[SpotifyTrack]) -> None:
+        self.mode = "tracks"
         self.tracks = tracks
+        self.containers = []
         table = self.query_one("#spotify-results", DataTable)
         table.clear()
         for track in tracks:
             table.add_row(track.name, track.artist, track.album, key=track.uri)
+
+    async def _show_containers(self, containers: list[SpotifyContainer]) -> None:
+        self.mode = "containers"
+        self.containers = containers
+        self.tracks = []
+        table = self.query_one("#spotify-results", DataTable)
+        table.clear()
+        for container in containers:
+            table.add_row(container.name, container.owner or "", container.kind, key=container.uri)
 
     async def _refresh_queue(self) -> None:
         tracks = await self.controller.client.queue()
@@ -124,6 +139,10 @@ class SpotifyScreen(Screen[None]):
         row = self.query_one("#spotify-results", DataTable).cursor_row
         return self.tracks[row] if 0 <= row < len(self.tracks) else None
 
+    def selected_container(self) -> SpotifyContainer | None:
+        row = self.query_one("#spotify-results", DataTable).cursor_row
+        return self.containers[row] if 0 <= row < len(self.containers) else None
+
     @on(Input.Submitted, "#spotify-search")
     async def submit_search(self, event: Input.Submitted) -> None:
         self.search_offset = 0
@@ -138,6 +157,16 @@ class SpotifyScreen(Screen[None]):
                     self.notify("Enable Spotify library scopes in Settings", severity="warning")
                     return
                 await self._show_tracks(await self.controller.saved_tracks())
+            elif source == "spotify-source-albums":
+                if not self.extended:
+                    self.notify("Enable Spotify library scopes in Settings", severity="warning")
+                    return
+                await self._show_containers(await self.controller.saved_albums())
+            elif source == "spotify-source-playlists":
+                if not self.extended:
+                    self.notify("Enable Spotify library scopes in Settings", severity="warning")
+                    return
+                await self._show_containers(await self.controller.playlists())
             elif source == "spotify-source-recent":
                 await self._show_tracks(await self.controller.recent())
             elif source == "spotify-source-top":
@@ -149,7 +178,21 @@ class SpotifyScreen(Screen[None]):
 
     @on(DataTable.RowSelected, "#spotify-results")
     async def play_selected(self) -> None:
-        if track := self.selected_track():
+        if self.mode == "containers" and (container := self.selected_container()):
+            content_id = container.uri.rsplit(":", 1)[-1]
+            tracks = (
+                await self.controller.album_tracks(content_id)
+                if container.kind == "album"
+                else await self.controller.playlist_tracks(content_id)
+            )
+            if tracks:
+                await self._show_tracks(tracks)
+            else:
+                self.notify(
+                    "Spotify did not expose this playlist's items; press o to open it",
+                    severity="warning",
+                )
+        elif track := self.selected_track():
             await self.controller.play(track)
             self.notify(f"Sent to Spotify: {track.name}")
 
@@ -183,8 +226,10 @@ class SpotifyScreen(Screen[None]):
 
     def action_open(self) -> None:
         track = self.selected_track()
-        if track and track.external_url:
-            webbrowser.open(track.external_url)
+        container = self.selected_container()
+        url = track.external_url if track else container.external_url if container else None
+        if url:
+            webbrowser.open(url)
 
     async def action_back(self) -> None:
         await self.controller.close()
