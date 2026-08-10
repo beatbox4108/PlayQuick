@@ -75,6 +75,8 @@ class PlayQuickApp(App[None]):
         ("delete", "queue_delete", "Remove"),
         ("ctrl+up", "queue_move(-1)", "Move up"),
         ("ctrl+down", "queue_move(1)", "Move down"),
+        ("ctrl+left", "horizontal_scroll(-8)", "Scroll left"),
+        ("ctrl+right", "horizontal_scroll(8)", "Scroll right"),
         ("f", "favorite", "Favorite"),
         ("p", "playlist_add", "Playlist"),
         ("question_mark", "help", "Help"),
@@ -488,6 +490,10 @@ class PlayQuickApp(App[None]):
     def action_cursor_up(self) -> None:
         if isinstance(self.focused, DataTable):
             self.focused.action_cursor_up()
+
+    def action_horizontal_scroll(self, amount: int) -> None:
+        if isinstance(self.focused, DataTable):
+            self.focused.scroll_relative(x=amount, animate=False)
 
     def action_browser_back(self) -> None:
         if self._drilldown_kind is not None:

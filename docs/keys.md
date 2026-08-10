@@ -9,6 +9,8 @@
 | `n` / `b` | Next / previous |
 | Left / Right | Seek 5 seconds |
 | Shift+Left / Shift+Right | Seek 30 seconds |
+| Ctrl+Left / Ctrl+Right | Scroll the focused table horizontally |
+| Ctrl+wheel / Shift+wheel | Scroll a table horizontally when supported by the terminal |
 | `+` / `-` / `0` | Volume up / down / mute |
 | `s` / `r` | Shuffle / repeat |
 | `/` or `Ctrl+f` | Search |

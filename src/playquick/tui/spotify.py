@@ -47,6 +47,8 @@ class SpotifyScreen(Screen[None]):
         ("slash", "search", "Search"),
         ("pageup", "previous_page", "Previous page"),
         ("pagedown", "next_page", "Next page"),
+        ("ctrl+left", "horizontal_scroll(-8)", "Scroll left"),
+        ("ctrl+right", "horizontal_scroll(8)", "Scroll right"),
         ("o", "open", "Open in Spotify"),
     ]
     CSS = """
@@ -169,6 +171,10 @@ class SpotifyScreen(Screen[None]):
     def selected_container(self) -> SpotifyContainer | None:
         row = self.query_one("#spotify-results", DataTable).cursor_row
         return self.containers[row] if 0 <= row < len(self.containers) else None
+
+    def action_horizontal_scroll(self, amount: int) -> None:
+        if isinstance(self.focused, DataTable):
+            self.focused.scroll_relative(x=amount, animate=False)
 
     @on(Input.Submitted, "#spotify-search")
     async def submit_search(self, event: Input.Submitted) -> None:

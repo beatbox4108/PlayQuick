@@ -35,6 +35,25 @@ async def test_tui_starts_without_mpv(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
+async def test_tui_scrolls_wide_table_horizontally(tmp_path: Path) -> None:
+    app = PlayQuickApp(
+        database_path=tmp_path / "library.db",
+        config_path=tmp_path / "config.toml",
+        setup_prompt=False,
+    )
+    async with app.run_test(size=(60, 25)) as pilot:
+        table = app.query_one("#library", DataTable)
+        table.add_row("Title", "Artist", "Album", "1:00")
+        table.focus()
+        await pilot.pause()
+
+        await pilot.press("ctrl+right")
+        await pilot.pause()
+
+        assert table.scroll_x > 0
+
+
+@pytest.mark.asyncio
 async def test_tui_drills_into_album_and_returns(tmp_path: Path) -> None:
     database_path = tmp_path / "library.db"
     database = Database(database_path)

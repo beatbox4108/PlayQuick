@@ -28,6 +28,7 @@ a            Add to queue         Delete Remove queue item
 ←/→          Seek 5 seconds       Shift+←/→ Seek 30 seconds
 n / b        Next / previous      /      Filter library
 Ctrl+f       Global search        u      Undo queue edit
+Ctrl+←/→     Horizontal scroll    Ctrl/Shift+wheel  Horizontal scroll
 ?            Help                 Ctrl+q Quit"""
             ),
             Button("Close", id="close", variant="primary"),
