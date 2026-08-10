@@ -8,7 +8,7 @@ commit="2c219aa822df18a1b7fd9abe3e151cd93ad67307"
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
   build-essential git meson ninja-build pkg-config python3-docutils \
-  libasound2-dev libavcodec-dev libavdevice-dev libavfilter-dev \
+  libasound2-dev libass-dev libavcodec-dev libavdevice-dev libavfilter-dev \
   libavformat-dev libavutil-dev libjpeg-dev libplacebo-dev libpulse-dev \
   libswresample-dev libswscale-dev libuchardet-dev libva-dev libvdpau-dev \
   libx11-dev libxext-dev libxinerama-dev libxkbcommon-dev libxrandr-dev \

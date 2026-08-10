@@ -14,7 +14,7 @@ sudo apt-get install -y --no-install-recommends \
   asciidoc automake autopoint bison build-essential ccache clang cmake curl \
   docbook2x flex g++-multilib gcc-multilib gettext git gperf libgcrypt-dev \
   libgmp-dev libmpc-dev libmpfr-dev libtool libtool-bin lld mercurial \
-  meson mimalloc nasm ninja-build p7zip-full pkgconf ragel re2c subversion \
+  meson nasm ninja-build p7zip-full pkgconf ragel re2c subversion \
   texinfo unzip yasm
 python3 -m pip install --break-system-packages jsonschema mako rst2pdf
 
