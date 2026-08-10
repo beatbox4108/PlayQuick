@@ -12,6 +12,12 @@ from textual.widgets import DataTable, Footer, Input, Label, ListItem, ListView,
 
 from playquick.spotify.controller import SpotifyRemoteController
 from playquick.spotify.models import SpotifyContainer, SpotifyPlayback, SpotifyTrack
+from playquick.tui.widgets import (
+    ALBUM_COLUMN_WIDTH,
+    ARTIST_COLUMN_WIDTH,
+    TITLE_COLUMN_WIDTH,
+    table_text,
+)
 
 
 class SpotifyStatus(Static):
@@ -84,8 +90,13 @@ class SpotifyScreen(Screen[None]):
         yield Footer()
 
     async def on_mount(self) -> None:
-        self.query_one("#spotify-results", DataTable).add_columns("Title", "Artist", "Album")
-        self.query_one("#spotify-queue", DataTable).add_columns("Spotify queue", "Artist")
+        results = self.query_one("#spotify-results", DataTable)
+        results.add_column("Title", key="title", width=TITLE_COLUMN_WIDTH)
+        results.add_column("Artist", key="artist", width=ARTIST_COLUMN_WIDTH)
+        results.add_column("Album", key="album", width=ALBUM_COLUMN_WIDTH)
+        queue = self.query_one("#spotify-queue", DataTable)
+        queue.add_column("Spotify queue", key="title", width=TITLE_COLUMN_WIDTH)
+        queue.add_column("Artist", key="artist", width=ARTIST_COLUMN_WIDTH)
         try:
             devices = await self.controller.devices()
             selector = self.query_one("#spotify-device", Select)
@@ -113,7 +124,12 @@ class SpotifyScreen(Screen[None]):
         table = self.query_one("#spotify-results", DataTable)
         table.clear()
         for track in tracks:
-            table.add_row(track.name, track.artist, track.album, key=track.uri)
+            table.add_row(
+                table_text(track.name, TITLE_COLUMN_WIDTH),
+                table_text(track.artist, ARTIST_COLUMN_WIDTH),
+                table_text(track.album, ALBUM_COLUMN_WIDTH),
+                key=track.uri,
+            )
 
     async def _show_containers(self, containers: list[SpotifyContainer]) -> None:
         self.mode = "containers"
@@ -122,14 +138,22 @@ class SpotifyScreen(Screen[None]):
         table = self.query_one("#spotify-results", DataTable)
         table.clear()
         for container in containers:
-            table.add_row(container.name, container.owner or "", container.kind, key=container.uri)
+            table.add_row(
+                table_text(container.name, TITLE_COLUMN_WIDTH),
+                table_text(container.owner or "", ARTIST_COLUMN_WIDTH),
+                table_text(container.kind, ALBUM_COLUMN_WIDTH),
+                key=container.uri,
+            )
 
     async def _refresh_queue(self) -> None:
         tracks = await self.controller.client.queue()
         table = self.query_one("#spotify-queue", DataTable)
         table.clear()
         for track in tracks:
-            table.add_row(track.name, track.artist)
+            table.add_row(
+                table_text(track.name, TITLE_COLUMN_WIDTH),
+                table_text(track.artist, ARTIST_COLUMN_WIDTH),
+            )
 
     async def _poll(self) -> None:
         try:
@@ -154,9 +178,7 @@ class SpotifyScreen(Screen[None]):
             await self._load_search_page()
 
     async def _load_search_page(self) -> None:
-        tracks = await self.controller.search(
-            self.search_query, offset=self.search_offset
-        )
+        tracks = await self.controller.search(self.search_query, offset=self.search_offset)
         await self._show_tracks(tracks)
         page = self.search_offset // 10 + 1
         self.notify(f"Spotify search page {page} ({len(tracks)} results)")

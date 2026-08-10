@@ -6,6 +6,17 @@ from textual.widget import Widget
 
 from playquick.models import PlaybackState, PlaybackStatus
 
+TITLE_COLUMN_WIDTH = 48
+ARTIST_COLUMN_WIDTH = 28
+ALBUM_COLUMN_WIDTH = 32
+
+
+def table_text(value: str, width: int) -> Text:
+    """Return a single-line table cell capped by terminal display width."""
+    text = Text(value, no_wrap=True, overflow="ellipsis")
+    text.truncate(width, overflow="ellipsis")
+    return text
+
 
 def _time(seconds: float) -> str:
     seconds = max(0, int(seconds))
@@ -38,4 +49,3 @@ class PlayerBar(Widget):
         if state.error:
             result.append(f"   {state.error}", style="red")
         return result
-

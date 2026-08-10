@@ -29,7 +29,13 @@ from playquick.tui.screens import (
     install_mpv,
 )
 from playquick.tui.spotify import SpotifyScreen
-from playquick.tui.widgets import PlayerBar
+from playquick.tui.widgets import (
+    ALBUM_COLUMN_WIDTH,
+    ARTIST_COLUMN_WIDTH,
+    TITLE_COLUMN_WIDTH,
+    PlayerBar,
+    table_text,
+)
 
 
 class PlayQuickApp(App[None]):
@@ -128,9 +134,13 @@ class PlayQuickApp(App[None]):
 
     async def on_mount(self) -> None:
         library = self.query_one("#library", DataTable)
-        library.add_columns("Title", "Artist", "Album", "Time")
+        library.add_column("Title", key="title", width=TITLE_COLUMN_WIDTH)
+        library.add_column("Artist", key="artist", width=ARTIST_COLUMN_WIDTH)
+        library.add_column("Album", key="album", width=ALBUM_COLUMN_WIDTH)
+        library.add_column("Time", key="time", width=8)
         queue = self.query_one("#queue", DataTable)
-        queue.add_columns("Up next", "Artist")
+        queue.add_column("Up next", key="title", width=TITLE_COLUMN_WIDTH)
+        queue.add_column("Artist", key="artist", width=ARTIST_COLUMN_WIDTH)
         self.load_tracks(self.repository.tracks())
         self.refresh_queue()
         if self.config.music_dirs:
@@ -200,9 +210,9 @@ class PlayQuickApp(App[None]):
         for track in tracks:
             minutes, seconds = divmod(int(track.duration), 60)
             table.add_row(
-                track.title,
-                track.artist,
-                track.album,
+                table_text(track.title, TITLE_COLUMN_WIDTH),
+                table_text(track.artist, ARTIST_COLUMN_WIDTH),
+                table_text(track.album, ALBUM_COLUMN_WIDTH),
                 f"{minutes}:{seconds:02d}",
                 key=str(track.id),
             )
@@ -216,7 +226,10 @@ class PlayQuickApp(App[None]):
         table = self.query_one("#queue", DataTable)
         table.clear()
         for track in self.queue.items():
-            table.add_row(track.title, track.artist)
+            table.add_row(
+                table_text(track.title, TITLE_COLUMN_WIDTH),
+                table_text(track.artist, ARTIST_COLUMN_WIDTH),
+            )
 
     @on(DataTable.RowSelected, "#library")
     async def play_selected(self) -> None:
@@ -369,14 +382,10 @@ class PlayQuickApp(App[None]):
         client_id = self.config.spotify_client_id
         if not client_id:
             return
-        scopes = BASE_SCOPES + (
-            LIBRARY_SCOPES if self.config.spotify_extended_library else ()
-        )
+        scopes = BASE_SCOPES + (LIBRARY_SCOPES if self.config.spotify_extended_library else ())
         auth = SpotifyAuth(client_id, scopes)
         controller = SpotifyRemoteController(SpotifyClient(auth))
-        self.push_screen(
-            SpotifyScreen(controller, extended=self.config.spotify_extended_library)
-        )
+        self.push_screen(SpotifyScreen(controller, extended=self.config.spotify_extended_library))
 
     def action_settings(self) -> None:
         self.push_screen(SettingsScreen(self.config), self._settings_result)

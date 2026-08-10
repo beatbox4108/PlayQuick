@@ -3,6 +3,14 @@ from pathlib import Path
 import pytest
 
 from playquick.tui.app import PlayQuickApp
+from playquick.tui.widgets import table_text
+
+
+def test_table_text_truncates_by_terminal_cell_width() -> None:
+    text = table_text("長いタイトル" * 10, 20)
+
+    assert text.cell_len == 20
+    assert text.plain.endswith("…")
 
 
 @pytest.mark.asyncio
