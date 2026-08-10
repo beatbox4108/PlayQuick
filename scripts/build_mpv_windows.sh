@@ -34,8 +34,11 @@ git config --global user.name "PlayQuick CI"
 git config --global user.email "playquick-ci@users.noreply.github.com"
 git config --global --add safe.directory /work
 
-git clone https://github.com/shinchiro/mpv-winbuild-cmake.git winbuild
-git -C winbuild checkout "${builder_commit}"
+if [[ ! -d winbuild/.git ]]; then
+  git clone https://github.com/shinchiro/mpv-winbuild-cmake.git winbuild
+fi
+git -C winbuild fetch origin "${builder_commit}"
+git -C winbuild checkout --force "${builder_commit}"
 
 # The pinned OpenSSL snapshot and ngtcp2 main currently disagree on QUIC APIs.
 # mpv only requires curl's regular HTTPS support, so omit the optional HTTP/3
@@ -75,12 +78,15 @@ else
 fi
 
 ninja -j "${jobs}" -C winbuild-out mpv-packaging
-mpv_archive="$(find winbuild-out -maxdepth 1 -type f -name 'mpv*.7z' -print -quit)"
+mpv_archive="$(find winbuild-out -maxdepth 1 -type f -name "mpv-${arch}-*.7z" -print -quit)"
 test -n "${mpv_archive}"
 package="mpv-windows-${arch}"
-mkdir -p "dist/${package}"
-7z x -y "${mpv_archive}" -o"dist/${package}"
-test -n "$(find "dist/${package}" -type f -name mpv.exe -print -quit)"
-cp THIRD_PARTY_NOTICES.md "dist/${package}/"
-cp scripts/build_mpv_windows.sh "dist/${package}/BUILD_RECIPE.sh"
-(cd "dist/${package}" && 7z a -tzip -mx=9 "../${package}.zip" .)
+staging="$(mktemp -d)"
+trap 'rm -rf "${staging}"' EXIT
+7z x -y "${mpv_archive}" -o"${staging}"
+test -f "${staging}/mpv.exe"
+cp THIRD_PARTY_NOTICES.md "${staging}/"
+cp scripts/build_mpv_windows.sh "${staging}/BUILD_RECIPE.sh"
+mkdir -p dist
+output_dir="$(realpath dist)"
+(cd "${staging}" && 7z a -tzip -mx=9 "${output_dir}/${package}.zip" .)
