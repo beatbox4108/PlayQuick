@@ -21,6 +21,10 @@ uv run playquick
 The first release targets glibc-based Linux distributions and Windows on
 x86_64 and ARM64. See `docs/installation.md` for platform details.
 
+Documentation: [installation](docs/installation.md), [keyboard controls](docs/keys.md),
+[Spotify Remote](docs/spotify.md), [privacy](docs/privacy.md), and
+[architecture](docs/architecture.md).
+
 ## Status
 
 PlayQuick v0.1 is under active development. Spotify Remote is optional and
@@ -31,4 +35,3 @@ change independently of PlayQuick.
 
 PlayQuick is released under the MIT License. Managed mpv downloads are separate
 programs distributed under their own licenses; see `THIRD_PARTY_NOTICES.md`.
-
