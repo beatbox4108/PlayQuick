@@ -3,25 +3,22 @@ set -euo pipefail
 
 arch="${1:?architecture is required}"
 builder_commit="cd1edc11dc6887a50f705717619d879f5a93a488"
+builder_image="ghcr.io/shinchiro/archlinux@sha256:8be8be63102aebd01d8297d2f96a0be905a979c0e8418e674b7b6d50b46c6df3"
 case "${arch}" in
   x86_64) target="x86_64-w64-mingw32" ;;
   arm64) target="aarch64-w64-mingw32" ;;
   *) echo "unsupported architecture: ${arch}" >&2; exit 2 ;;
 esac
 
-sudo apt-get update
-sudo apt-get install -y --no-install-recommends \
-  asciidoc automake autopoint bison build-essential ccache clang cmake curl \
-  docbook2x flex g++-multilib gcc-multilib gettext git gperf gyp libc++-dev \
-  libc++abi-dev libgcrypt-dev libgmp-dev libmimalloc-dev libmpc-dev \
-  libmpfr-dev libtool libtool-bin lld mercurial \
-  meson nasm ninja-build p7zip-full pkgconf ragel re2c subversion \
-  texinfo unzip yasm zip
-python3 -m pip install --break-system-packages jsonschema mako rst2pdf
-
-# Several dependency configure scripts require Bash semantics. This is the
-# builder project's documented Ubuntu setup and is isolated to the CI runner.
-sudo ln -sf /bin/bash /bin/sh
+if [[ "${PLAYQUICK_MPV_CONTAINER:-}" != "1" ]]; then
+  docker run --rm \
+    --env PLAYQUICK_MPV_CONTAINER=1 \
+    --volume "${PWD}:/work" \
+    --workdir /work \
+    "${builder_image}" \
+    bash scripts/build_mpv_windows.sh "${arch}"
+  exit
+fi
 
 git clone https://github.com/shinchiro/mpv-winbuild-cmake.git winbuild
 git -C winbuild checkout "${builder_commit}"
@@ -52,4 +49,4 @@ mkdir -p "dist/${package}"
 test -n "$(find "dist/${package}" -type f -name mpv.exe -print -quit)"
 cp THIRD_PARTY_NOTICES.md "dist/${package}/"
 cp scripts/build_mpv_windows.sh "dist/${package}/BUILD_RECIPE.sh"
-(cd "dist/${package}" && zip -9 -r "../${package}.zip" .)
+(cd "dist/${package}" && 7z a -tzip -mx=9 "../${package}.zip" .)
