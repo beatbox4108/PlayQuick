@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 import time
+import urllib.parse
 
 import httpx
 import pytest
 
-from playquick.spotify.auth import OAuthToken, SpotifyAuth, create_challenge
+from playquick.spotify.auth import (
+    DEFAULT_REDIRECT_URI,
+    OAuthToken,
+    SpotifyAuth,
+    create_challenge,
+)
 from playquick.spotify.client import SpotifyClient
 
 
@@ -27,6 +33,71 @@ def test_pkce_challenge_is_url_safe() -> None:
     challenge = create_challenge("a" * 64)
     assert "=" not in challenge
     assert "+" not in challenge
+
+
+def test_login_request_uses_static_callback_and_pkce() -> None:
+    request = SpotifyAuth("client", ("scope",), store=MemoryStore()).begin_login()
+    query = urllib.parse.parse_qs(urllib.parse.urlparse(request.url).query)
+
+    assert query["redirect_uri"] == [DEFAULT_REDIRECT_URI]
+    assert query["code_challenge_method"] == ["S256"]
+    assert query["state"] == [request.state]
+
+
+@pytest.mark.asyncio
+async def test_login_completes_from_pasted_callback_url() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        form = urllib.parse.parse_qs(request.content.decode())
+        assert form["code"] == ["authorization-code"]
+        assert form["redirect_uri"] == [DEFAULT_REDIRECT_URI]
+        return httpx.Response(
+            200,
+            json={
+                "access_token": "new-token",
+                "refresh_token": "new-refresh",
+                "expires_in": 3600,
+                "scope": "scope",
+            },
+        )
+
+    store = MemoryStore()
+    auth = SpotifyAuth(
+        "client",
+        ("scope",),
+        store=store,
+        client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+    request = auth.begin_login()
+    callback = f"{DEFAULT_REDIRECT_URI}?code=authorization-code&state={request.state}"
+
+    token = await auth.complete_login(request, callback)
+
+    assert token.access_token == "new-token"
+    assert store.value == token
+
+
+@pytest.mark.asyncio
+async def test_login_rejects_callback_with_wrong_state() -> None:
+    auth = SpotifyAuth("client", (), store=MemoryStore())
+    request = auth.begin_login()
+
+    with pytest.raises(RuntimeError, match="state mismatch"):
+        await auth.complete_login(
+            request,
+            f"{DEFAULT_REDIRECT_URI}?code=authorization-code&state=wrong",
+        )
+
+
+@pytest.mark.asyncio
+async def test_login_rejects_callback_from_another_site() -> None:
+    auth = SpotifyAuth("client", (), store=MemoryStore())
+    request = auth.begin_login()
+
+    with pytest.raises(ValueError, match="not the PlayQuick Spotify callback"):
+        await auth.complete_login(
+            request,
+            f"https://example.test/callback?code=code&state={request.state}",
+        )
 
 
 @pytest.mark.asyncio

@@ -16,6 +16,9 @@ def build_parser() -> argparse.ArgumentParser:
     scan.add_argument("paths", nargs="+")
     spotify = subcommands.add_parser("spotify", help="Manage Spotify Remote authorization")
     spotify.add_argument("action", choices=("login", "logout"))
+    spotify.add_argument(
+        "--no-browser", action="store_true", help="Print the authorization URL only"
+    )
     return parser
 
 
@@ -29,9 +32,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     if args.command == "doctor":
         from playquick.runtime.doctor import run_doctor
 
-        raise SystemExit(
-            run_doctor(install=args.install_mpv, repair=args.repair_mpv)
-        )
+        raise SystemExit(run_doctor(install=args.install_mpv, repair=args.repair_mpv))
     if args.command == "scan":
         from playquick.commands import scan_paths
 
@@ -39,4 +40,4 @@ def main(argv: Sequence[str] | None = None) -> None:
     if args.command == "spotify":
         from playquick.spotify.commands import spotify_command
 
-        raise SystemExit(spotify_command(args.action))
+        raise SystemExit(spotify_command(args.action, open_browser=not args.no_browser))

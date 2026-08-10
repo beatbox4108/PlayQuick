@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import os
+import webbrowser
 
 from playquick.config import ConfigStore
 from playquick.spotify.auth import SpotifyAuth
@@ -18,7 +20,7 @@ LIBRARY_SCOPES = (
 )
 
 
-def spotify_command(action: str) -> int:
+def spotify_command(action: str, *, open_browser: bool = True) -> int:
     config = ConfigStore().load()
     if not config.spotify_client_id:
         print("Set spotify_client_id in the PlayQuick settings first.")
@@ -26,10 +28,19 @@ def spotify_command(action: str) -> int:
     scopes = BASE_SCOPES + (LIBRARY_SCOPES if config.spotify_extended_library else ())
     auth = SpotifyAuth(config.spotify_client_id, scopes)
     if action == "login":
-        asyncio.run(auth.login())
+        request = auth.begin_login()
+        print("Open this URL in a browser and approve access:\n")
+        print(request.url)
+        print("\nAfter authorization, paste the full callback URL below.")
+        remote_session = any(
+            os.environ.get(name) for name in ("SSH_CLIENT", "SSH_CONNECTION", "SSH_TTY")
+        )
+        if open_browser and not remote_session:
+            webbrowser.open(request.url)
+        callback_url = input("Callback URL: ").strip()
+        asyncio.run(auth.complete_login(request, callback_url))
         print("Spotify account connected.")
     elif action == "logout":
         asyncio.run(auth.disconnect())
         print("Spotify account disconnected and local credentials removed.")
     return 0
-

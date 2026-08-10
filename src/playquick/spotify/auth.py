@@ -5,14 +5,11 @@ import base64
 import hashlib
 import json
 import secrets
-import threading
 import time
 import urllib.parse
-import webbrowser
 from contextlib import suppress
 from dataclasses import asdict, dataclass
-from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import ClassVar, Protocol
+from typing import Protocol
 
 import httpx
 import keyring
@@ -20,6 +17,7 @@ import keyring
 AUTH_URL = "https://accounts.spotify.com/authorize"
 TOKEN_URL = "https://accounts.spotify.com/api/token"
 SERVICE_NAME = "PlayQuick"
+DEFAULT_REDIRECT_URI = "https://beatbox4108.github.io/PlayQuick/spotify-callback/"
 
 
 @dataclass(slots=True)
@@ -32,6 +30,14 @@ class OAuthToken:
     @property
     def expired(self) -> bool:
         return time.time() >= self.expires_at - 30
+
+
+@dataclass(slots=True, frozen=True)
+class AuthorizationRequest:
+    url: str
+    redirect_uri: str
+    verifier: str
+    state: str
 
 
 class TokenStore(Protocol):
@@ -65,36 +71,19 @@ def create_challenge(verifier: str) -> str:
     return base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
 
 
-class _CallbackHandler(BaseHTTPRequestHandler):
-    values: ClassVar[dict[str, str]] = {}
-    event: ClassVar[threading.Event] = threading.Event()
-
-    def do_GET(self) -> None:
-        query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-        type(self).values = {key: values[0] for key, values in query.items() if values}
-        body = b"PlayQuick authorization received. You can close this window."
-        self.send_response(200)
-        self.send_header("Content-Type", "text/plain; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-        type(self).event.set()
-
-    def log_message(self, _format: str, *_args: object) -> None:
-        return
-
-
 class SpotifyAuth:
     def __init__(
         self,
         client_id: str,
         scopes: tuple[str, ...],
         *,
+        redirect_uri: str = DEFAULT_REDIRECT_URI,
         store: TokenStore | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
         self.client_id = client_id
         self.scopes = scopes
+        self.redirect_uri = redirect_uri
         self.store = store or KeyringTokenStore()
         self.client = client or httpx.AsyncClient(timeout=30)
 
@@ -106,31 +95,40 @@ class SpotifyAuth:
             token = await self.refresh(token)
         return token.access_token
 
-    async def login(self) -> OAuthToken:
+    def begin_login(self) -> AuthorizationRequest:
         verifier = create_verifier()
         state = secrets.token_urlsafe(24)
-        _CallbackHandler.values = {}
-        _CallbackHandler.event.clear()
-        server = HTTPServer(("127.0.0.1", 0), _CallbackHandler)
-        redirect_uri = f"http://127.0.0.1:{server.server_port}/callback"
         query = urllib.parse.urlencode(
             {
                 "client_id": self.client_id,
                 "response_type": "code",
-                "redirect_uri": redirect_uri,
+                "redirect_uri": self.redirect_uri,
                 "scope": " ".join(self.scopes),
                 "state": state,
                 "code_challenge_method": "S256",
                 "code_challenge": create_challenge(verifier),
             }
         )
-        webbrowser.open(f"{AUTH_URL}?{query}")
-        try:
-            await asyncio.wait_for(asyncio.to_thread(server.handle_request), timeout=180)
-        finally:
-            server.server_close()
-        values = _CallbackHandler.values
-        if values.get("state") != state:
+        return AuthorizationRequest(
+            url=f"{AUTH_URL}?{query}",
+            redirect_uri=self.redirect_uri,
+            verifier=verifier,
+            state=state,
+        )
+
+    async def complete_login(self, request: AuthorizationRequest, callback_url: str) -> OAuthToken:
+        callback = urllib.parse.urlparse(callback_url.strip())
+        expected = urllib.parse.urlparse(request.redirect_uri)
+        if (callback.scheme, callback.netloc, callback.path) != (
+            expected.scheme,
+            expected.netloc,
+            expected.path,
+        ):
+            raise ValueError("The pasted URL is not the PlayQuick Spotify callback URL")
+        values = {
+            key: items[0] for key, items in urllib.parse.parse_qs(callback.query).items() if items
+        }
+        if values.get("state") != request.state:
             raise RuntimeError("Spotify OAuth state mismatch")
         if error := values.get("error"):
             raise RuntimeError(f"Spotify authorization failed: {error}")
@@ -143,8 +141,8 @@ class SpotifyAuth:
                 "client_id": self.client_id,
                 "grant_type": "authorization_code",
                 "code": code,
-                "redirect_uri": redirect_uri,
-                "code_verifier": verifier,
+                "redirect_uri": request.redirect_uri,
+                "code_verifier": request.verifier,
             },
         )
         response.raise_for_status()
