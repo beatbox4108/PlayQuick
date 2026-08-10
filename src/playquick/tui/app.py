@@ -50,7 +50,7 @@ class PlayQuickApp(App[None]):
         ("ctrl+2", "spotify", "Spotify"),
         ("space", "toggle_pause", "Play/Pause"),
         ("a", "queue_append", "Queue"),
-        ("A", "queue_next", "Play next"),
+        ("shift+a", "queue_next", "Play next"),
         ("n", "next_track", "Next"),
         ("b", "previous_track", "Previous"),
         ("left", "seek(-5)", "-5s"),
@@ -64,6 +64,7 @@ class PlayQuickApp(App[None]):
         ("ctrl+up", "queue_move(-1)", "Move up"),
         ("ctrl+down", "queue_move(1)", "Move down"),
         ("f", "favorite", "Favorite"),
+        ("p", "playlist_add", "Playlist"),
         ("question_mark", "help", "Help"),
         ("comma", "settings", "Settings"),
         ("plus", "volume(5)", "Volume +"),
@@ -241,7 +242,13 @@ class PlayQuickApp(App[None]):
         elif source_id == "source-folders":
             self.load_tracks(self.repository.tracks(order_by="path"))
         elif source_id == "source-playlists":
-            self.notify("Playlist editor will appear after selecting or creating a playlist")
+            names = self.repository.playlist_names()
+            if names:
+                self.load_tracks(self.repository.playlist_tracks(names[0]))
+                self.notify(f"Showing playlist: {names[0]}")
+            else:
+                self.load_tracks([])
+                self.notify("No playlists yet; select a track and press p to add it")
         elif source_id == "source-spotify":
             self.action_spotify()
         else:
@@ -318,6 +325,11 @@ class PlayQuickApp(App[None]):
         if track := self.selected_track():
             self.repository.set_favorite(track.id, True)
             self.notify(f"Favorited {track.title}")
+
+    def action_playlist_add(self) -> None:
+        if track := self.selected_track():
+            self.repository.add_to_playlist("Quick Picks", track.id)
+            self.notify(f"Added {track.title} to Quick Picks")
 
     def action_help(self) -> None:
         self.push_screen(HelpScreen())

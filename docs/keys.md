@@ -13,8 +13,8 @@
 | `s` / `r` | Shuffle / repeat |
 | `/` or `Ctrl+f` | Search |
 | `u` | Undo queue edit |
+| `f` / `p` | Add to favorites / Quick Picks playlist |
 | `Ctrl+1` / `Ctrl+2` | Local / Spotify Remote |
 | `,` | Settings |
 | `?` | Context help |
 | `Ctrl+q` | Save session and quit |
-

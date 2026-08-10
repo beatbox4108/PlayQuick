@@ -71,6 +71,43 @@ class LibraryRepository:
             ).fetchall()
         return [_track(row) for row in rows]
 
+    def playlist_names(self) -> list[str]:
+        with self.database.connect() as connection:
+            rows = connection.execute(
+                "SELECT name FROM playlists ORDER BY name COLLATE NOCASE"
+            ).fetchall()
+        return [str(row["name"]) for row in rows]
+
+    def add_to_playlist(self, name: str, track_id: int) -> None:
+        with self.database.transaction() as connection:
+            connection.execute("INSERT OR IGNORE INTO playlists(name) VALUES (?)", (name,))
+            playlist = connection.execute(
+                "SELECT id FROM playlists WHERE name = ?", (name,)
+            ).fetchone()
+            assert playlist is not None
+            position_row = connection.execute(
+                "SELECT COALESCE(MAX(position), -1) + 1 next FROM playlist_items "
+                "WHERE playlist_id = ?",
+                (int(playlist["id"]),),
+            ).fetchone()
+            position = int(position_row["next"]) if position_row else 0
+            connection.execute(
+                "INSERT INTO playlist_items(playlist_id, track_id, position) VALUES (?, ?, ?)",
+                (int(playlist["id"]), track_id, position),
+            )
+
+    def playlist_tracks(self, name: str) -> list[Track]:
+        with self.database.connect() as connection:
+            rows = connection.execute(
+                """SELECT tracks.* FROM playlist_items
+                   JOIN playlists ON playlists.id = playlist_items.playlist_id
+                   JOIN tracks ON tracks.id = playlist_items.track_id
+                   WHERE playlists.name = ? AND tracks.missing = 0
+                   ORDER BY playlist_items.position""",
+                (name,),
+            ).fetchall()
+        return [_track(row) for row in rows]
+
     def add_history(self, track_id: int) -> None:
         with self.database.transaction() as connection:
             connection.execute("INSERT INTO play_history(track_id) VALUES (?)", (track_id,))
