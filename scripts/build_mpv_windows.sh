@@ -20,12 +20,23 @@ python3 -m pip install --break-system-packages jsonschema mako rst2pdf
 
 git clone https://github.com/shinchiro/mpv-winbuild-cmake.git winbuild
 git -C winbuild checkout "${builder_commit}"
-cmake -S winbuild -B winbuild-out -G Ninja \
-  -DTARGET_ARCH="${target}" \
-  -DCOMPILER_TOOLCHAIN=clang \
-  -DCMAKE_INSTALL_PREFIX="${PWD}/clang-root" \
-  -DMINGW_INSTALL_PREFIX="${PWD}/mingw-root"
-ninja -C winbuild-out llvm rustup llvm-clang mpv
+if [[ "${arch}" == "x86_64" ]]; then
+  cmake -S winbuild -B winbuild-out -G Ninja \
+    -DTARGET_ARCH="${target}" \
+    -DMINGW_INSTALL_PREFIX="${PWD}/mingw-root"
+  ninja -C winbuild-out gcc
+  ninja -C winbuild-out mpv
+else
+  cmake -S winbuild -B winbuild-out -G Ninja \
+    -DTARGET_ARCH="${target}" \
+    -DCOMPILER_TOOLCHAIN=clang \
+    -DCMAKE_INSTALL_PREFIX="${PWD}/clang-root" \
+    -DMINGW_INSTALL_PREFIX="${PWD}/mingw-root"
+  ninja -C winbuild-out llvm
+  ninja -C winbuild-out rustup
+  ninja -C winbuild-out llvm-clang
+  ninja -C winbuild-out mpv
+fi
 
 mpv_exe="$(find winbuild-out -type f -name mpv.exe -print -quit)"
 test -n "${mpv_exe}"
