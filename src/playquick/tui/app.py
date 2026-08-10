@@ -14,8 +14,13 @@ from playquick.playback.mpv import MpvController
 from playquick.playback.queue import PlaybackQueue
 from playquick.playback.session import PlaybackSession
 from playquick.runtime.mpv_manager import MpvRuntimeManager
+from playquick.spotify.auth import SpotifyAuth
+from playquick.spotify.client import SpotifyClient
+from playquick.spotify.commands import BASE_SCOPES, LIBRARY_SCOPES
+from playquick.spotify.controller import SpotifyRemoteController
 from playquick.storage import Database, LibraryRepository
 from playquick.tui.screens import HelpScreen, MpvSetupScreen, SettingsScreen, install_mpv
+from playquick.tui.spotify import SpotifyScreen
 from playquick.tui.widgets import PlayerBar
 
 
@@ -40,6 +45,7 @@ class PlayQuickApp(App[None]):
     """
     BINDINGS: ClassVar = [
         ("ctrl+q", "quit_app", "Quit"),
+        ("ctrl+2", "spotify", "Spotify"),
         ("space", "toggle_pause", "Play/Pause"),
         ("a", "queue_append", "Queue"),
         ("A", "queue_next", "Play next"),
@@ -200,7 +206,7 @@ class PlayQuickApp(App[None]):
         elif source_id == "source-history":
             self.load_tracks(self.repository.history())
         elif source_id == "source-spotify":
-            self.notify("Spotify Remote is experimental; configure a Client ID in Settings")
+            self.action_spotify()
         else:
             self.load_tracks(self.repository.tracks())
 
@@ -257,6 +263,21 @@ class PlayQuickApp(App[None]):
 
     def action_help(self) -> None:
         self.push_screen(HelpScreen())
+
+    def action_spotify(self) -> None:
+        client_id = self.config.spotify_client_id
+        if not client_id:
+            self.notify("Set your Spotify Client ID in Settings first", severity="warning")
+            self.action_settings()
+            return
+        scopes = BASE_SCOPES + (
+            LIBRARY_SCOPES if self.config.spotify_extended_library else ()
+        )
+        auth = SpotifyAuth(client_id, scopes)
+        controller = SpotifyRemoteController(SpotifyClient(auth))
+        self.push_screen(
+            SpotifyScreen(controller, extended=self.config.spotify_extended_library)
+        )
 
     def action_settings(self) -> None:
         self.push_screen(SettingsScreen(self.config), self._settings_result)

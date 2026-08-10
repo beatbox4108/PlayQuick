@@ -58,3 +58,7 @@ class SpotifyRemoteController:
             import asyncio
 
             await asyncio.sleep(interval)
+
+    async def close(self) -> None:
+        await self.client.client.aclose()
+        await self.client.auth.client.aclose()
