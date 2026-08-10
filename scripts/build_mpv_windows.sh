@@ -35,6 +35,19 @@ git config --global --add safe.directory /work
 
 git clone https://github.com/shinchiro/mpv-winbuild-cmake.git winbuild
 git -C winbuild checkout "${builder_commit}"
+
+# The pinned OpenSSL snapshot and ngtcp2 main currently disagree on QUIC APIs.
+# mpv only requires curl's regular HTTPS support, so omit the optional HTTP/3
+# dependency chain while retaining HTTP/1.1, HTTP/2, and TLS.
+sed -i \
+  -e '/^[[:space:]]*ngtcp2$/d' \
+  -e '/^[[:space:]]*nghttp3$/d' \
+  -e 's/-DUSE_NGHTTP3=ON/-DUSE_NGHTTP3=OFF/' \
+  -e 's/-DUSE_NGTCP2=ON/-DUSE_NGTCP2=OFF/' \
+  -e 's/-DUSE_ECH=ON/-DUSE_ECH=OFF/' \
+  -e 's/-DUSE_HTTPSRR=ON/-DUSE_HTTPSRR=OFF/' \
+  -e 's/-DUSE_PROXY_HTTP3=ON/-DUSE_PROXY_HTTP3=OFF/' \
+  winbuild/packages/curl.cmake
 if [[ "${arch}" == "x86_64" ]]; then
   cmake --fresh -S winbuild -B winbuild-out -G Ninja \
     -DTARGET_ARCH="${target}" \

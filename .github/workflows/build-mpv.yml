@@ -32,6 +32,16 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        if: matrix.platform == 'windows'
+        with:
+          path: |
+            winbuild-out
+            src_packages
+            clang-root
+          key: mpv-${{ matrix.platform }}-${{ matrix.arch }}-cd1edc11-${{ github.run_id }}
+          restore-keys: |
+            mpv-${{ matrix.platform }}-${{ matrix.arch }}-cd1edc11-
       - name: Build Linux runtime
         if: matrix.platform == 'linux'
         run: scripts/build_mpv_linux.sh "${{ matrix.arch }}"
@@ -46,6 +56,14 @@ jobs:
           name: mpv-${{ matrix.platform }}-${{ matrix.arch }}
           path: dist/mpv-${{ matrix.platform }}-${{ matrix.arch }}.*
           if-no-files-found: error
+      - uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        if: ${{ always() && matrix.platform == 'windows' }}
+        with:
+          path: |
+            winbuild-out
+            src_packages
+            clang-root
+          key: mpv-${{ matrix.platform }}-${{ matrix.arch }}-cd1edc11-${{ github.run_id }}
 
   release:
     if: startsWith(github.ref, 'refs/tags/')
