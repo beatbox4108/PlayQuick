@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "playquick"
+version = "0.1.0"
+description = "A keyboard-first TUI music player"
+readme = "README.md"
+requires-python = ">=3.12,<3.15"
+license = { file = "LICENSE" }
+authors = [{ name = "beatbox4108" }]
+dependencies = [
+  "httpx>=0.28,<1",
+  "keyring>=25,<27",
+  "mutagen>=1.47,<2",
+  "platformdirs>=4.3,<5",
+  "textual>=3.0,<9",
+  "tomli-w>=1.2,<2",
+  "watchfiles>=1.0,<2",
+]
+
+[project.scripts]
+playquick = "playquick.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/beatbox4108/PlayQuick"
+Repository = "https://github.com/beatbox4108/PlayQuick"
+
+[dependency-groups]
+dev = [
+  "mypy>=1.15,<2",
+  "pytest>=8.3,<10",
+  "pytest-asyncio>=0.25,<2",
+  "respx>=0.22,<1",
+  "ruff>=0.11,<1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/playquick"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["playquick"]
+
