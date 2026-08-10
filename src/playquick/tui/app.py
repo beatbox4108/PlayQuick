@@ -8,14 +8,14 @@ from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import DataTable, Footer, Header, Input, Label, ListItem, ListView
 
-from playquick.config import ConfigStore, default_database_path
-from playquick.models import PlaybackStatus, Track
+from playquick.config import AppConfig, ConfigStore, default_database_path
+from playquick.models import PlaybackStatus, RepeatMode, Track
 from playquick.playback.mpv import MpvController
 from playquick.playback.queue import PlaybackQueue
 from playquick.playback.session import PlaybackSession
 from playquick.runtime.mpv_manager import MpvRuntimeManager
 from playquick.storage import Database, LibraryRepository
-from playquick.tui.screens import HelpScreen, MpvSetupScreen, install_mpv
+from playquick.tui.screens import HelpScreen, MpvSetupScreen, SettingsScreen, install_mpv
 from playquick.tui.widgets import PlayerBar
 
 
@@ -30,7 +30,7 @@ class PlayQuickApp(App[None]):
     #search { display: none; dock: top; }
     #search.visible { display: block; }
     PlayerBar { height: 3; padding: 1; background: $surface; }
-    #help-dialog, #mpv-dialog {
+    #help-dialog, #mpv-dialog, #settings-dialog {
       width: 70; height: auto; padding: 1 2;
       border: thick $primary; background: $surface;
     }
@@ -53,6 +53,12 @@ class PlayQuickApp(App[None]):
         ("ctrl+f", "search", "Search"),
         ("u", "undo", "Undo"),
         ("question_mark", "help", "Help"),
+        ("comma", "settings", "Settings"),
+        ("plus", "volume(5)", "Volume +"),
+        ("minus", "volume(-5)", "Volume -"),
+        ("0", "mute", "Mute"),
+        ("s", "shuffle", "Shuffle"),
+        ("r", "repeat", "Repeat"),
         ("j", "cursor_down", "Down"),
         ("k", "cursor_up", "Up"),
     ]
@@ -77,6 +83,7 @@ class PlayQuickApp(App[None]):
         self.session: PlaybackSession | None = None
         self._tracks: list[Track] = []
         self._setup_prompt = setup_prompt
+        self.dark = self.config.theme != "light"
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -250,6 +257,42 @@ class PlayQuickApp(App[None]):
 
     def action_help(self) -> None:
         self.push_screen(HelpScreen())
+
+    def action_settings(self) -> None:
+        self.push_screen(SettingsScreen(self.config), self._settings_result)
+
+    def _settings_result(self, config: AppConfig | None) -> None:
+        if config is None:
+            return
+        self.config = config
+        self.config_store.save(config)
+        self.dark = config.theme != "light"
+        self.notify("Settings saved")
+
+    async def action_volume(self, change: int) -> None:
+        if self.controller:
+            await self.controller.set_volume(self.controller.state.volume + change)
+            self.query_one(PlayerBar).state = self.controller.state
+
+    async def action_mute(self) -> None:
+        if self.controller:
+            await self.controller.set_volume(0)
+            self.query_one(PlayerBar).state = self.controller.state
+
+    async def action_shuffle(self) -> None:
+        if self.controller:
+            await self.controller.set_shuffle(not self.controller.state.shuffle)
+
+    async def action_repeat(self) -> None:
+        if not self.controller:
+            return
+        current = self.controller.state.repeat
+        target = {
+            RepeatMode.OFF: RepeatMode.ALL,
+            RepeatMode.ALL: RepeatMode.ONE,
+            RepeatMode.ONE: RepeatMode.OFF,
+        }[current]
+        await self.controller.set_repeat(target)
 
     def action_cursor_down(self) -> None:
         if isinstance(self.focused, DataTable):

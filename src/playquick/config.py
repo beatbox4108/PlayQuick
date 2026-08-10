@@ -17,6 +17,7 @@ class AppConfig:
     volume: int = 70
     spotify_client_id: str | None = None
     spotify_extended_library: bool = False
+    keybindings: dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def from_mapping(cls, value: dict[str, Any]) -> AppConfig:
