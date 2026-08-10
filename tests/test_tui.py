@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from textual.widgets import DataTable
 
-from playquick.models import LibraryGroupKind
+from playquick.models import LibraryGroupKind, Track
 from playquick.storage import Database
 from playquick.tui.app import PlayQuickApp
 from playquick.tui.widgets import seek_position, table_text
@@ -51,6 +51,20 @@ async def test_tui_scrolls_wide_table_horizontally(tmp_path: Path) -> None:
         await pilot.pause()
 
         assert table.scroll_x > 0
+
+
+@pytest.mark.asyncio
+async def test_tui_displays_repeated_tracks_in_history(tmp_path: Path) -> None:
+    app = PlayQuickApp(
+        database_path=tmp_path / "library.db",
+        config_path=tmp_path / "config.toml",
+        setup_prompt=False,
+    )
+    track = Track(1, Path("song.mp3"), "Song")
+    async with app.run_test(size=(100, 25)):
+        app.load_tracks([track, track])
+
+        assert app.query_one("#library", DataTable).row_count == 2
 
 
 @pytest.mark.asyncio

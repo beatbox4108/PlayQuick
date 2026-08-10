@@ -212,14 +212,14 @@ class PlayQuickApp(App[None]):
         self._drilldown_kind = None
         table = self.query_one("#library", DataTable)
         self._configure_track_columns(table)
-        for track in tracks:
+        for row_index, track in enumerate(tracks):
             minutes, seconds = divmod(int(track.duration), 60)
             table.add_row(
                 table_text(track.title, TITLE_COLUMN_WIDTH),
                 table_text(track.artist, ARTIST_COLUMN_WIDTH),
                 table_text(track.album, ALBUM_COLUMN_WIDTH),
                 f"{minutes}:{seconds:02d}",
-                key=str(track.id),
+                key=f"{track.id}:{row_index}",
             )
 
     def _configure_track_columns(self, table: DataTable[object]) -> None:
