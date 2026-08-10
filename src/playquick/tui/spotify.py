@@ -39,6 +39,8 @@ class SpotifyScreen(Screen[None]):
         ("n", "next", "Next"),
         ("b", "previous", "Previous"),
         ("slash", "search", "Search"),
+        ("pageup", "previous_page", "Previous page"),
+        ("pagedown", "next_page", "Next page"),
         ("o", "open", "Open in Spotify"),
     ]
     CSS = """
@@ -59,6 +61,7 @@ class SpotifyScreen(Screen[None]):
         self.containers: list[SpotifyContainer] = []
         self.mode = "tracks"
         self.search_offset = 0
+        self.search_query = ""
 
     def compose(self) -> ComposeResult:
         yield Label("Spotify Remote · Experimental · audio stays on Spotify Connect", id="notice")
@@ -146,7 +149,17 @@ class SpotifyScreen(Screen[None]):
     @on(Input.Submitted, "#spotify-search")
     async def submit_search(self, event: Input.Submitted) -> None:
         self.search_offset = 0
-        await self._show_tracks(await self.controller.search(event.value))
+        self.search_query = event.value.strip()
+        if self.search_query:
+            await self._load_search_page()
+
+    async def _load_search_page(self) -> None:
+        tracks = await self.controller.search(
+            self.search_query, offset=self.search_offset
+        )
+        await self._show_tracks(tracks)
+        page = self.search_offset // 10 + 1
+        self.notify(f"Spotify search page {page} ({len(tracks)} results)")
 
     @on(ListView.Selected, "#spotify-sources")
     async def source_selected(self, event: ListView.Selected) -> None:
@@ -223,6 +236,19 @@ class SpotifyScreen(Screen[None]):
 
     def action_search(self) -> None:
         self.query_one("#spotify-search", Input).focus()
+
+    async def action_next_page(self) -> None:
+        if not self.search_query:
+            self.notify("Run a Spotify search first", severity="warning")
+            return
+        self.search_offset += 10
+        await self._load_search_page()
+
+    async def action_previous_page(self) -> None:
+        if not self.search_query or self.search_offset == 0:
+            return
+        self.search_offset = max(0, self.search_offset - 10)
+        await self._load_search_page()
 
     def action_open(self) -> None:
         track = self.selected_track()

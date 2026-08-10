@@ -52,6 +52,22 @@ class MpvSetupScreen(ModalScreen[bool]):
         self.dismiss(event.button.id == "download")
 
 
+class PlaybackSwitchScreen(ModalScreen[bool]):
+    """Confirm that local audio should stop before using Spotify Remote."""
+
+    def compose(self) -> ComposeResult:
+        yield Vertical(
+            Label("Local playback is active."),
+            Label("Stop it and open Spotify Remote to avoid simultaneous playback?"),
+            Button("Stop local and continue", id="continue", variant="primary"),
+            Button("Cancel", id="cancel"),
+            id="mpv-dialog",
+        )
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        self.dismiss(event.button.id == "continue")
+
+
 class SettingsScreen(ModalScreen[AppConfig | None]):
     def __init__(self, config: AppConfig) -> None:
         super().__init__()

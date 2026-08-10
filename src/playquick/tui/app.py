@@ -21,7 +21,13 @@ from playquick.spotify.client import SpotifyClient
 from playquick.spotify.commands import BASE_SCOPES, LIBRARY_SCOPES
 from playquick.spotify.controller import SpotifyRemoteController
 from playquick.storage import Database, LibraryRepository
-from playquick.tui.screens import HelpScreen, MpvSetupScreen, SettingsScreen, install_mpv
+from playquick.tui.screens import (
+    HelpScreen,
+    MpvSetupScreen,
+    PlaybackSwitchScreen,
+    SettingsScreen,
+    install_mpv,
+)
 from playquick.tui.spotify import SpotifyScreen
 from playquick.tui.widgets import PlayerBar
 
@@ -339,6 +345,29 @@ class PlayQuickApp(App[None]):
         if not client_id:
             self.notify("Set your Spotify Client ID in Settings first", severity="warning")
             self.action_settings()
+            return
+        if self.controller and self.controller.state.status == PlaybackStatus.PLAYING:
+            self.push_screen(PlaybackSwitchScreen(), self._spotify_switch_result)
+            return
+        self._open_spotify()
+
+    def _spotify_switch_result(self, proceed: bool | None) -> None:
+        if proceed:
+            self.run_worker(
+                self._stop_local_and_open_spotify(),
+                name="spotify-playback-switch",
+                exclusive=True,
+            )
+
+    async def _stop_local_and_open_spotify(self) -> None:
+        if self.controller:
+            await self.controller.stop()
+            self.query_one(PlayerBar).state = self.controller.state
+        self._open_spotify()
+
+    def _open_spotify(self) -> None:
+        client_id = self.config.spotify_client_id
+        if not client_id:
             return
         scopes = BASE_SCOPES + (
             LIBRARY_SCOPES if self.config.spotify_extended_library else ()
