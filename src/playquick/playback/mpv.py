@@ -105,6 +105,16 @@ class MpvController:
                     raise MpvError(str(response.get("error", "unknown mpv error")))
                 return response.get("data")
 
+    async def _property(self, name: str) -> Any:
+        try:
+            return await self._command("get_property", name)
+        except MpvError as error:
+            # mpv removes transient playback properties after a file reaches EOF.
+            # This is a normal idle state, not a transport or playback failure.
+            if str(error) == "property unavailable":
+                return None
+            raise
+
     async def play(self, track: Track) -> None:
         await self._command("loadfile", str(track.path), "replace")
         self._state.track = track
@@ -154,13 +164,16 @@ class MpvController:
         self._emit()
 
     async def poll(self) -> PlaybackState:
-        position = await self._command("get_property", "time-pos")
-        duration = await self._command("get_property", "duration")
-        paused = await self._command("get_property", "pause")
+        position = await self._property("time-pos")
+        duration = await self._property("duration")
+        paused = await self._property("pause")
         self._state.position = float(position or 0)
         self._state.duration = float(duration or self._state.duration)
         if self._state.track:
-            self._state.status = PlaybackStatus.PAUSED if paused else PlaybackStatus.PLAYING
+            if position is None and duration is None:
+                self._state.status = PlaybackStatus.STOPPED
+            else:
+                self._state.status = PlaybackStatus.PAUSED if paused else PlaybackStatus.PLAYING
         self._emit()
         return self._state
 
