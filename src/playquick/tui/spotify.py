@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import webbrowser
+from collections.abc import Awaitable
 from typing import ClassVar
 
 from rich.text import Text
@@ -106,7 +107,9 @@ class SpotifyScreen(Screen[None]):
             selector.set_options(options)
             active = next((device.id for device in devices if device.active), None)
             if active:
-                selector.value = active
+                # Reflect Spotify's current device without sending a redundant transfer.
+                with selector.prevent(Select.Changed):
+                    selector.value = active
             if self.extended:
                 await self._show_tracks(await self.controller.saved_tracks())
             await self._refresh_queue()
@@ -219,48 +222,76 @@ class SpotifyScreen(Screen[None]):
 
     @on(DataTable.RowSelected, "#spotify-results")
     async def play_selected(self) -> None:
-        if self.mode == "containers" and (container := self.selected_container()):
-            content_id = container.uri.rsplit(":", 1)[-1]
-            tracks = (
-                await self.controller.album_tracks(content_id)
-                if container.kind == "album"
-                else await self.controller.playlist_tracks(content_id)
-            )
-            if tracks:
-                await self._show_tracks(tracks)
-            else:
-                self.notify(
-                    "Spotify did not expose this playlist's items; press o to open it",
-                    severity="warning",
+        try:
+            if self.mode == "containers" and (container := self.selected_container()):
+                content_id = container.uri.rsplit(":", 1)[-1]
+                tracks = (
+                    await self.controller.album_tracks(content_id)
+                    if container.kind == "album"
+                    else await self.controller.playlist_tracks(content_id)
                 )
-        elif track := self.selected_track():
-            await self.controller.play(track)
-            self.notify(f"Sent to Spotify: {track.name}")
+                if tracks:
+                    await self._show_tracks(tracks)
+                else:
+                    self.notify(
+                        "Spotify did not expose this playlist's items; press o to open it",
+                        severity="warning",
+                    )
+            elif track := self.selected_track():
+                await self.controller.play(track)
+                await self._poll()
+                self.notify(f"Sent to Spotify: {track.name}")
+        except Exception as error:
+            self.notify(f"Spotify command failed: {error}", severity="error")
 
     @on(Select.Changed, "#spotify-device")
     async def device_selected(self, event: Select.Changed) -> None:
         if isinstance(event.value, str):
-            await self.controller.transfer(event.value)
-            self.notify("Spotify playback transferred")
+            current = self.controller.state.device if self.controller.state else None
+            if current and current.id == event.value and current.active:
+                return
+            await self._run_player_command(
+                self.controller.transfer(event.value),
+                "Spotify playback transferred",
+            )
+
+    async def _run_player_command(
+        self, command: Awaitable[None], success: str | None = None
+    ) -> bool:
+        try:
+            await command
+            await self._poll()
+        except Exception as error:
+            self.notify(f"Spotify command failed: {error}", severity="error")
+            return False
+        if success:
+            self.notify(success)
+        return True
 
     async def action_play_pause(self) -> None:
         state = self.controller.state
         if state and state.playing:
-            await self.controller.pause()
+            await self._run_player_command(self.controller.pause())
+        elif state:
+            await self._run_player_command(self.controller.resume())
         elif track := self.selected_track():
-            await self.controller.play(track)
+            await self._run_player_command(self.controller.play(track))
 
     async def action_queue(self) -> None:
-        if track := self.selected_track():
-            await self.controller.add_to_queue(track)
-            await self._refresh_queue()
+        if (track := self.selected_track()) and await self._run_player_command(
+            self.controller.add_to_queue(track)
+        ):
+            try:
+                await self._refresh_queue()
+            except Exception as error:
+                self.notify(f"Spotify queue refresh failed: {error}", severity="warning")
             self.notify(f"Added to Spotify queue: {track.name}")
 
     async def action_next(self) -> None:
-        await self.controller.client.next()
+        await self._run_player_command(self.controller.client.next())
 
     async def action_previous(self) -> None:
-        await self.controller.client.previous()
+        await self._run_player_command(self.controller.client.previous())
 
     def action_search(self) -> None:
         self.query_one("#spotify-search", Input).focus()

@@ -25,6 +25,9 @@ class SpotifyRemoteController:
     async def pause(self) -> None:
         await self.client.pause()
 
+    async def resume(self) -> None:
+        await self.client.play()
+
     async def add_to_queue(self, track: SpotifyTrack) -> None:
         await self.client.add_to_queue(track.uri)
 
