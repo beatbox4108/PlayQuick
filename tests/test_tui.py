@@ -6,7 +6,7 @@ from textual.widgets import DataTable
 from playquick.models import LibraryGroupKind
 from playquick.storage import Database
 from playquick.tui.app import PlayQuickApp
-from playquick.tui.widgets import table_text
+from playquick.tui.widgets import seek_position, table_text
 
 
 def test_table_text_truncates_by_terminal_cell_width() -> None:
@@ -14,6 +14,11 @@ def test_table_text_truncates_by_terminal_cell_width() -> None:
 
     assert text.cell_len == 20
     assert text.plain.endswith("…")
+
+
+def test_seek_position_maps_pointer_to_duration() -> None:
+    assert seek_position(50, 101, 600) == 300
+    assert seek_position(200, 101, 600) == 600
 
 
 @pytest.mark.asyncio

@@ -48,7 +48,7 @@ class PlayQuickApp(App[None]):
     #queue { height: 1fr; border: solid $secondary; }
     #search { display: none; dock: top; }
     #search.visible { display: block; }
-    PlayerBar { height: 3; padding: 1; background: $surface; }
+    PlayerBar { height: 4; padding: 1; background: $surface; }
     #help-dialog, #mpv-dialog, #settings-dialog {
       width: 70; height: auto; padding: 1 2;
       border: thick $primary; background: $surface;
@@ -367,6 +367,13 @@ class PlayQuickApp(App[None]):
     async def action_seek(self, seconds: int) -> None:
         if self.controller:
             await self.controller.seek(seconds)
+            self.query_one(PlayerBar).state = self.controller.state
+
+    @on(PlayerBar.SeekRequested)
+    async def seek_from_player_bar(self, event: PlayerBar.SeekRequested) -> None:
+        if self.controller:
+            await self.controller.seek_to(event.position)
+            self.query_one(PlayerBar).state = self.controller.state
 
     def action_undo(self) -> None:
         if self.queue.undo():

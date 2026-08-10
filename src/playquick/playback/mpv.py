@@ -140,6 +140,14 @@ class MpvController:
         self._state.position = max(0, self._state.position + seconds)
         self._emit()
 
+    async def seek_to(self, position: float) -> None:
+        position = max(0, position)
+        if self._state.duration > 0:
+            position = min(position, self._state.duration)
+        await self._command("seek", position, "absolute", "exact")
+        self._state.position = position
+        self._emit()
+
     async def set_volume(self, volume: int) -> None:
         volume = max(0, min(100, volume))
         await self._command("set_property", "volume", volume)

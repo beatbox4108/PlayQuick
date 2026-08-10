@@ -36,11 +36,7 @@ class EndedTrackTransport(FakeTransport):
         request = json.loads(data)
         command = request["command"]
         self.commands.append(command)
-        error = (
-            "property unavailable"
-            if command[:2] == ["get_property", "time-pos"]
-            else "success"
-        )
+        error = "property unavailable" if command[:2] == ["get_property", "time-pos"] else "success"
         self.responses.append(
             json.dumps({"request_id": request["request_id"], "error": error}).encode()
         )
@@ -54,9 +50,11 @@ async def test_mpv_controller_loads_and_pauses_track() -> None:
     track = Track(1, Path("song.mp3"), "Song")
     await controller.play(track)
     await controller.pause(True)
+    await controller.seek_to(42)
 
     assert ["loadfile", "song.mp3", "replace"] in transport.commands
     assert controller.state.status == PlaybackStatus.PAUSED
+    assert ["seek", 42, "absolute", "exact"] in transport.commands
 
 
 @pytest.mark.asyncio
